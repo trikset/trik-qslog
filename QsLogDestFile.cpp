@@ -142,6 +142,7 @@ void QsLogging::FileDestination::write(const QString& message, Level)
             std::cerr << "QsLog: could not reopen log file " << qPrintable(mFile.fileName());
         mRotationStrategy->setInitialInfo(mFile);
         mOutputStream.setDevice(&mFile);
+        mOutputStream.setCodec(QTextCodec::codecForName("UTF-8"));
     }
 
     mOutputStream << message << endl;

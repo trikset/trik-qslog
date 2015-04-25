@@ -8,6 +8,8 @@ TEMPLATE = app
 # test-case sources
 SOURCES += TestLog.cpp
 
+HEADERS += TestLog.h
+
 # component sources
 include(../QsLog.pri)
 

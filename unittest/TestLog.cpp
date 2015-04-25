@@ -1,71 +1,11 @@
+#include "TestLog.h"
 #include "QtTestUtil/QtTestUtil.h"
 #include "QsLog.h"
 #include "QsLogDest.h"
-#include <QHash>
+#include "QsLogDestFile.h"
+#include <QTest>
 #include <QSharedPointer>
 #include <QtGlobal>
-
-// A destination that tracks log messages
-class MockDestination : public QsLogging::Destination
-{
-public:
-    virtual void write(const QString &message, QsLogging::Level level)
-    {
-        Message m;
-        m.text = message;
-        m.level = level;
-        mMessages.push_back(m);
-        ++mCountByLevel[level];
-    }
-
-    virtual bool isValid()
-    {
-        return true;
-    }
-
-    struct Message
-    {
-        Message() : level(QsLogging::TraceLevel) {}
-        QString text;
-        QsLogging::Level level;
-    };
-
-    void clear()
-    {
-        mMessages.clear();
-        mCountByLevel.clear();
-    }
-
-    int messageCount() const
-    {
-        return mMessages.count();
-    }
-
-    int messageCountForLevel(QsLogging::Level level) const
-    {
-        return mCountByLevel.value(level);
-    }
-
-    bool hasMessage(const QString &messageContent, QsLogging::Level level) const
-    {
-        Q_FOREACH (const Message &m, mMessages) {
-            if (m.level == level && m.text.contains(messageContent))
-                return true;
-        }
-
-        return false;
-    }
-
-    const Message& messageAt(int index)
-    {
-        Q_ASSERT(index >= 0 && index < messageCount());
-        return mMessages.at(index);
-    }
-
-private:
-    QHash<QsLogging::Level,int> mCountByLevel;
-    QList<Message> mMessages;
-};
 
 // Autotests for QsLog
 class TestLog : public QObject
@@ -84,6 +24,11 @@ private slots:
     void testMessageText();
     void testLevelChanges();
     void testLevelParsing();
+    void testDestinationRemove();
+    void testWillRotate();
+    void testRotation_data();
+    void testRotation();
+    void testRotationNoBackup();
     void cleanupTestCase();
 
 private:
@@ -121,13 +66,6 @@ void TestLog::testAllLevels()
     QCOMPARE(mockDest1->messageCountForLevel(WarnLevel), 1);
     QCOMPARE(mockDest1->messageCountForLevel(ErrorLevel), 1);
     QCOMPARE(mockDest1->messageCountForLevel(FatalLevel), 1);
-    QCOMPARE(mockDest2->messageCount(), 6);
-    QCOMPARE(mockDest2->messageCountForLevel(TraceLevel), 1);
-    QCOMPARE(mockDest2->messageCountForLevel(DebugLevel), 1);
-    QCOMPARE(mockDest2->messageCountForLevel(InfoLevel), 1);
-    QCOMPARE(mockDest2->messageCountForLevel(WarnLevel), 1);
-    QCOMPARE(mockDest2->messageCountForLevel(ErrorLevel), 1);
-    QCOMPARE(mockDest2->messageCountForLevel(FatalLevel), 1);
 }
 
 void TestLog::testMessageText()
@@ -191,6 +129,90 @@ void TestLog::testLevelParsing()
         QCOMPARE(Logger::levelFromLogMessage(m.text), m.level);
         QCOMPARE(conversionOk, true);
     }
+}
+
+void TestLog::testDestinationRemove()
+{
+    using namespace QsLogging;
+    mockDest1->clear();
+    mockDest2->clear();
+    Logger::instance().setLoggingLevel(DebugLevel);
+    QSharedPointer<MockDestination> toAddAndRemove(new MockDestination);
+    Logger::instance().addDestination(toAddAndRemove);
+
+    QLOG_INFO() << "one for all";
+    QCOMPARE(mockDest1->messageCount(), 1);
+    QCOMPARE(mockDest2->messageCount(), 1);
+    QCOMPARE(toAddAndRemove->messageCount(), 1);
+
+    Logger::instance().removeDestination(toAddAndRemove);
+    QLOG_INFO() << "one for (almost) all";
+    QCOMPARE(mockDest1->messageCount(), 2);
+    QCOMPARE(mockDest2->messageCount(), 2);
+    QCOMPARE(toAddAndRemove->messageCount(), 1);
+    QCOMPARE(toAddAndRemove->messageCountForLevel(InfoLevel), 1);
+
+    Logger::instance().addDestination(toAddAndRemove);
+    QLOG_INFO() << "another one for all";
+    QCOMPARE(mockDest1->messageCount(), 3);
+    QCOMPARE(mockDest2->messageCount(), 3);
+    QCOMPARE(toAddAndRemove->messageCount(), 2);
+    QCOMPARE(toAddAndRemove->messageCountForLevel(InfoLevel), 2);
+}
+
+void TestLog::testWillRotate()
+{
+    using namespace QsLogging;
+    MockSizeRotationStrategy rotationStrategy;
+    rotationStrategy.setBackupCount(1);
+    rotationStrategy.setMaximumSizeInBytes(10);
+    QCOMPARE(rotationStrategy.shouldRotate(), false);
+
+    rotationStrategy.includeMessageInCalculation(QLatin1String("12345"));
+    QCOMPARE(rotationStrategy.shouldRotate(), false);
+
+    rotationStrategy.includeMessageInCalculation(QLatin1String("12345"));
+    QCOMPARE(rotationStrategy.shouldRotate(), false);
+
+    rotationStrategy.includeMessageInCalculation(QLatin1String("1"));
+    QCOMPARE(rotationStrategy.shouldRotate(), true);
+}
+
+void TestLog::testRotation_data()
+{
+    QTest::addColumn<int>("backupCount");
+
+    QTest::newRow("one backup") << 1;
+    QTest::newRow("three backups") << 3;
+    QTest::newRow("five backups") << 5;
+    QTest::newRow("ten backups") << 10;
+}
+
+void TestLog::testRotation()
+{
+    using namespace QsLogging;
+
+    QFETCH(int, backupCount);
+    MockSizeRotationStrategy rotationStrategy;
+    rotationStrategy.setBackupCount(backupCount);
+    for (int i = 0;i < backupCount;++i) {
+        rotationStrategy.rotate();
+        QCOMPARE(rotationStrategy.filesList().size(), 1 + i + 1); // 1 log + "rotation count" backups
+    }
+
+    rotationStrategy.rotate();
+    QCOMPARE(rotationStrategy.filesList().size(), backupCount + 1); // 1 log + backup count
+}
+
+void TestLog::testRotationNoBackup()
+{
+    using namespace QsLogging;
+    MockSizeRotationStrategy rotationStrategy;
+    rotationStrategy.setBackupCount(0);
+    rotationStrategy.setMaximumSizeInBytes(10);
+
+    rotationStrategy.rotate();
+    QCOMPARE(rotationStrategy.filesList().size(), 1); // log
 }
 
 void TestLog::cleanupTestCase()

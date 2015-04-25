@@ -186,7 +186,14 @@ Logger::~Logger()
 void Logger::addDestination(DestinationPtr destination)
 {
     assert(destination.data());
+    QMutexLocker lock(&d->logMutex);
     d->destList.push_back(destination);
+}
+
+void Logger::removeDestination(const DestinationPtr& destination)
+{
+    QMutexLocker lock(&d->logMutex);
+    d->destList.removeOne(destination);
 }
 
 void Logger::setLoggingLevel(Level newLevel)

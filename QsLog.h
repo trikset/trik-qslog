@@ -49,6 +49,8 @@ public:
 
     //! Adds a log message destination. Don't add null destinations.
     void addDestination(DestinationPtr destination);
+    //! Removes a previously added destination. Does nothing if destination was not previously added.
+    void removeDestination(const DestinationPtr& destination);
     //! Logging at a level < 'newLevel' will be ignored
     void setLoggingLevel(Level newLevel);
     //! The default level is INFO

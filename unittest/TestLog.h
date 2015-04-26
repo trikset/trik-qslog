@@ -99,7 +99,11 @@ protected:
         QString editedPath = path;
         if (editedPath.startsWith(fakePath)) {
             editedPath.remove(0, fakePath.size() + 1);
-            return files.removeOne(editedPath);
+            const int indexOfPath = files.indexOf(editedPath);
+            if (indexOfPath != -1) {
+                files.removeAt(indexOfPath);
+                return true;
+            }
         }
 
         return false;

@@ -193,7 +193,13 @@ void Logger::addDestination(DestinationPtr destination)
 void Logger::removeDestination(const DestinationPtr& destination)
 {
     QMutexLocker lock(&d->logMutex);
+#if (QT_VERSION >= 0x050400)
     d->destList.removeOne(destination);
+#else
+    int index = d->destList.indexOf(destination);
+    assert(index != -1);
+    d->destList.remove(index);
+#endif
 }
 
 void Logger::setLoggingLevel(Level newLevel)

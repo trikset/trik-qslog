@@ -9,9 +9,11 @@ CONFIG -= app_bundle
 CONFIG += shared
 TEMPLATE = lib
 
-DESTDIR = $$PWD/build-QsLogShared
-OBJECTS_DIR = $$DESTDIR/obj
-MOC_DIR = $$DESTDIR/moc
+QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
+!isEmpty(QSLOG_DESTDIR) {
+    message(Will use $${QSLOG_DESTDIR} as destdir.)
+    DESTDIR = $${QSLOG_DESTDIR}/bin
+}
 
 win32 {
     DEFINES += QSLOG_IS_SHARED_LIBRARY

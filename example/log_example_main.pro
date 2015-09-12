@@ -6,16 +6,18 @@ CONFIG += console
 CONFIG -= app_bundle
 TEMPLATE = app
 SOURCES += log_example_main.cpp
-INCLUDEPATH += $$PWD/../
 DEFINES += QSLOG_IS_SHARED_LIBRARY_IMPORT
+INCLUDEPATH += ../
+QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
+!isEmpty(QSLOG_DESTDIR) {
+    DESTDIR = $${QSLOG_DESTDIR}/bin
+} else {
+    error(Please set the QSLOG_DESTDIR environment variable)
+}
 
-LIBS += -L$$PWD/../build-QsLogShared
+LIBS += -L$${QSLOG_DESTDIR}/bin -llog_example_shared
 win32 {
     LIBS += -lQsLog2
 } else {
     LIBS += -lQsLog
 }
-LIBS += -L$$PWD/../build-QsLogExample -llog_example_shared
-
-DESTDIR = $$PWD/../build-QsLogExample
-OBJECTS_DIR = $$DESTDIR/obj

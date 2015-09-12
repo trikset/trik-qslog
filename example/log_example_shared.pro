@@ -8,11 +8,15 @@ TEMPLATE = lib
 DEFINES += EXAMPLE_IS_SHARED_LIBRARY QSLOG_IS_SHARED_LIBRARY_IMPORT
 SOURCES += log_example_shared.cpp
 HEADERS += log_example_shared.h
-INCLUDEPATH += $$PWD/../
-DESTDIR = $$PWD/../build-QsLogExample
-OBJECTS_DIR = $$DESTDIR/obj
+INCLUDEPATH += ../
+QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
+!isEmpty(QSLOG_DESTDIR) {
+    DESTDIR = $${QSLOG_DESTDIR}/bin
+} else {
+    error(Please set the QSLOG_DESTDIR environment variable)
+}
 
-LIBS += -L$$PWD/../build-QsLogShared
+LIBS += -L${QSLOG_DESTDIR}/bin
 win32 {
     LIBS += -lQsLog2
 } else {

@@ -51,7 +51,18 @@ public:
 public:
     virtual ~Destination();
     virtual void write(const QString& message, Level level) = 0;
-    virtual bool isValid() = 0; // returns whether the destination was created correctly
+    //!
+    //! \brief isValid
+    //! \return whether the destination was created correctly
+    //!
+    virtual bool isValid() = 0;
+    //!
+    //! \brief type
+    //! \return the type as a string e.g: console, file.
+    //!         The returned value may change in different versions of QsLog, but two destinations
+    //!         of the same type will return the same value.
+    //!
+    virtual QString type() const = 0;
 };
 typedef QSharedPointer<Destination> DestinationPtr;
 

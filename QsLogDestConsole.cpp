@@ -44,6 +44,7 @@ void QsDebugOutput::output( const QString& message )
 }
 #endif
 
+const char* const QsLogging::DebugOutputDestination::Type = "console";
 
 void QsLogging::DebugOutputDestination::write(const QString& message, Level)
 {
@@ -53,4 +54,9 @@ void QsLogging::DebugOutputDestination::write(const QString& message, Level)
 bool QsLogging::DebugOutputDestination::isValid()
 {
     return true;
+}
+
+QString QsLogging::DebugOutputDestination::type() const
+{
+    return QString::fromLatin1(Type);
 }

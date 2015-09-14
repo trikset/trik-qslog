@@ -27,6 +27,9 @@
 #include "QsLogDestFunctor.h"
 #include <cstddef>
 #include <QtGlobal>
+#include <QString>
+
+const char* const QsLogging::FunctorDestination::Type = "functor";
 
 QsLogging::FunctorDestination::FunctorDestination(LogFunction f)
     : QObject(NULL)
@@ -54,4 +57,9 @@ void QsLogging::FunctorDestination::write(const QString &message, QsLogging::Lev
 bool QsLogging::FunctorDestination::isValid()
 {
     return true;
+}
+
+QString QsLogging::FunctorDestination::type() const
+{
+    return QString::fromLatin1(Type);
 }

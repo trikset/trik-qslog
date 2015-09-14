@@ -26,6 +26,7 @@
 #include "QsLogDestFile.h"
 #include <QTextCodec>
 #include <QDateTime>
+#include <QString>
 #include <QtGlobal>
 #include <iostream>
 
@@ -143,6 +144,7 @@ bool QsLogging::SizeRotationStrategy::renameFileFromTo(const QString &from, cons
     return QFile::rename(from, to);
 }
 
+const char* const QsLogging::FileDestination::Type = "file";
 
 QsLogging::FileDestination::FileDestination(const QString& filePath, RotationStrategyPtr rotationStrategy)
     : mRotationStrategy(rotationStrategy)
@@ -179,5 +181,10 @@ void QsLogging::FileDestination::write(const QString& message, Level)
 bool QsLogging::FileDestination::isValid()
 {
     return mFile.isOpen();
+}
+
+QString QsLogging::FileDestination::type() const
+{
+    return QString::fromLatin1(Type);
 }
 

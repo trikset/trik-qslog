@@ -51,6 +51,8 @@ public:
     void addDestination(DestinationPtr destination);
     //! Removes a previously added destination. Does nothing if destination was not previously added.
     void removeDestination(const DestinationPtr& destination);
+    //! Checks if a destination of a specific type has been added. Pass T::Type as parameter.
+    bool hasDestinationOfType(const char* type) const;
     //! Logging at a level < 'newLevel' will be ignored
     void setLoggingLevel(Level newLevel);
     //! The default level is INFO

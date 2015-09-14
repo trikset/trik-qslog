@@ -93,9 +93,12 @@ typedef QSharedPointer<RotationStrategy> RotationStrategyPtr;
 class FileDestination : public Destination
 {
 public:
+    static const char* const Type;
+
     FileDestination(const QString& filePath, RotationStrategyPtr rotationStrategy);
     virtual void write(const QString& message, Level level);
     virtual bool isValid();
+    virtual QString type() const;
 
 private:
     QFile mFile;

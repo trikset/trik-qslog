@@ -35,6 +35,11 @@ public:
         return true;
     }
 
+    virtual QString type() const
+    {
+        return QString::fromLatin1("mock");
+    }
+
     void clear()
     {
         mMessages.clear();

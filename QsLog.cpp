@@ -32,6 +32,7 @@
 #include <QMutex>
 #include <QVector>
 #include <QDateTime>
+#include <QLatin1String>
 #include <QtGlobal>
 #include <cassert>
 #include <cstdlib>
@@ -197,6 +198,19 @@ void Logger::removeDestination(const DestinationPtr& destination)
     if (destinationIndex != -1) {
         d->destList.remove(destinationIndex);
     }
+}
+
+bool Logger::hasDestinationOfType(const char* type) const
+{
+    QMutexLocker lock(&d->logMutex);
+    for (DestinationList::iterator it = d->destList.begin(),
+        endIt = d->destList.end();it != endIt;++it) {
+        if ((*it)->type() == QLatin1String(type)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void Logger::setLoggingLevel(Level newLevel)

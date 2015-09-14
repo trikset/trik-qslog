@@ -3,9 +3,17 @@
 #include "QsLog.h"
 #include "QsLogDest.h"
 #include "QsLogDestFile.h"
+#include "QsLogDestConsole.h"
+#include "QsLogDestFile.h"
+#include "QsLogDestFunctor.h"
 #include <QTest>
 #include <QSharedPointer>
 #include <QtGlobal>
+
+void DummyLogFunction(const QString &, QsLogging::Level)
+{
+
+}
 
 // Autotests for QsLog
 class TestLog : public QObject
@@ -29,6 +37,7 @@ private slots:
     void testRotation_data();
     void testRotation();
     void testRotationNoBackup();
+    void testDestinationType();
     void cleanupTestCase();
 
 private:
@@ -213,6 +222,52 @@ void TestLog::testRotationNoBackup()
 
     rotationStrategy.rotate();
     QCOMPARE(rotationStrategy.filesList().size(), 1); // log
+}
+
+
+
+void TestLog::testDestinationType()
+{
+    using namespace QsLogging;
+
+    DestinationPtr console = DestinationFactory::MakeDebugOutputDestination();
+    DestinationPtr file = DestinationFactory::MakeFileDestination("test.log",
+                           DisableLogRotation, MaxSizeBytes(5000), MaxOldLogCount(1));
+    DestinationPtr func = DestinationFactory::MakeFunctorDestination(&DummyLogFunction);
+
+    QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
+
+    Logger::instance().addDestination(console);
+    QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), true);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
+
+    Logger::instance().addDestination(file);
+    QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), true);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), true);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
+
+    Logger::instance().addDestination(func);
+    QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), true);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), true);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), true);
+
+    Logger::instance().removeDestination(console);
+    QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), true);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), true);
+
+    Logger::instance().removeDestination(file);
+    QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), true);
+
+    Logger::instance().removeDestination(func);
+    QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
+    QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
 }
 
 void TestLog::cleanupTestCase()

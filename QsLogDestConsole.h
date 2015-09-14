@@ -27,7 +27,6 @@
 #define QSLOGDESTCONSOLE_H
 
 #include "QsLogDest.h"
-
 class QString;
 
 class QsDebugOutput
@@ -43,8 +42,11 @@ namespace QsLogging
 class DebugOutputDestination : public Destination
 {
 public:
+    static const char* const Type;
+
     virtual void write(const QString& message, Level level);
     virtual bool isValid();
+    virtual QString type() const;
 };
 
 }

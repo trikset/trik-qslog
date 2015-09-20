@@ -38,7 +38,6 @@ private slots:
     void testRotation();
     void testRotationNoBackup();
     void testDestinationType();
-    void cleanupTestCase();
 
 private:
     QSharedPointer<MockDestination> mockDest1;
@@ -268,11 +267,6 @@ void TestLog::testDestinationType()
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
-}
-
-void TestLog::cleanupTestCase()
-{
-    QsLogging::Logger::destroyInstance();
 }
 
 QTTESTUTIL_REGISTER_TEST(TestLog);

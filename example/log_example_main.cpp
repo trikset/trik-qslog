@@ -93,6 +93,5 @@ int main(int argc, char *argv[])
 
    QLOG_DEBUG() << "Program ending";
 
-   QsLogging::Logger::destroyInstance();
    return 0;
 }

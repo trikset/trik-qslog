@@ -52,8 +52,6 @@ static const char FatalString[] = "FATAL";
 // not using Qt::ISODate because we need the milliseconds too
 static const QString fmtDateTime("yyyy-MM-ddThh:mm:ss.zzz");
 
-static Logger* sInstance = 0;
-
 static const char* LevelToText(Level theLevel)
 {
     switch (theLevel) {
@@ -138,16 +136,8 @@ Logger::Logger()
 
 Logger& Logger::instance()
 {
-    if (!sInstance)
-        sInstance = new Logger;
-
-    return *sInstance;
-}
-
-void Logger::destroyInstance()
-{
-    delete sInstance;
-    sInstance = 0;
+    static Logger instance;
+    return instance;
 }
 
 // tries to extract the level from a string log message. If available, conversionSucceeded will

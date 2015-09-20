@@ -15,13 +15,33 @@ All contributions will be credited, license of the contributions should be 3-cla
 * Small dependency: just drop it in your project directly.
 
 ### Usage ###
-* Include QsLog.h. Include QsLogDest.h only where you create/add destinations.
-* Get the instance of the logger by calling QsLogging::Logger::instance();
-* Optionally set the logging level. Info is default.
-* Create as many destinations as you want by using the QsLogging::DestinationFactory.
-* Add the destinations to the logger instance by calling addDestination.
+Directly including the QsLog source code in a project:
 
-### Disabling logging ###
+1. Include QsLog.pri in your pro file
+2. Include QsLog.h in your C++ files. Include QsLogDest.h only where you create/add destinations.
+3. Get the instance of the logger by calling QsLogging::Logger::instance();
+4. Optionally set the logging level. Info is default.
+5. Create as many destinations as you want by using the QsLogging::DestinationFactory.
+6. Add the destinations to the logger instance by calling addDestination.
+7. Start logging!
+
+Linking to QsLog dynamically:
+
+1. Build QsLog using the QsLogSharedLibrary.pro.
+2. Add the QsLog shared library to your LIBS project dependencies.
+3. Follow the steps in "directly including QsLog in your project" starting with step 2.
+
+Note: when you want to use QsLog both from an executable and a shared library you have to
+      link QsLog dynamically due to a limitation with static variables.
+
+### Configuration ###
+QsLog has several configurable parameters in its .pri file:
+
+* defining QS_LOG_LINE_NUMBERS in the .pri file enables writing the file and line number
+  automatically for each logging call
+* defining QS_LOG_SEPARATE_THREAD will route all log messages to a separate thread.
+* defining QS_LOG_WIN_PRINTF_CONSOLE will use fprintf instead of OutputDebugString on Windows
+
 Sometimes it's necessary to turn off logging. This can be done in several ways:
 
 * globally, at compile time, by enabling the QS_LOG_DISABLE macro in the supplied .pri file.

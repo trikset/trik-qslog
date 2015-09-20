@@ -19,5 +19,5 @@ HEADERS += $$PWD/QsLogDest.h \
 
 OTHER_FILES += \
     $$PWD/QsLogChanges.txt \
-    $$PWD/QsLogReadme.txt \
+    $$PWD/README.md \
     $$PWD/LICENSE.txt

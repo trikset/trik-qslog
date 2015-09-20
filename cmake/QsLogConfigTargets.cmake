@@ -1,3 +1,5 @@
+# CMake build support courtesy of A.Gembe
+
 if (WIN32)
 	set(QSLOG_RELEASE_PATH "/Release")
 	set(QSLOG_RELWDBG_PATH "/RelWithDebInfo")

@@ -1,4 +1,5 @@
 #-------------------------------------------------------------------
+# CMake build support courtesy of A.Gembe
 # The contents of this file are placed in the public domain. Feel
 # free to make use of it in any way you like.
 #-------------------------------------------------------------------

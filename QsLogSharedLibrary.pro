@@ -15,6 +15,8 @@ QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
     DESTDIR = $${QSLOG_DESTDIR}/bin
 }
 
+DISTRO = $$system(uname -a)
+
 win32 {
     DEFINES += QSLOG_IS_SHARED_LIBRARY
 }
@@ -26,9 +28,11 @@ unix:!macx {
 
     other_files.files = *.txt
     other_files.path = /usr/local/share/$(QMAKE_TARGET)
+    contains(DISTRO, .*ARCH): other_files.path = /usr/share/$(QMAKE_TARGET)
 
     contains(QT_ARCH, x86_64) {
         target.path = /usr/lib64
+        contains(DISTRO, .*ARCH): target.path = /usr/lib
     } else {
         target.path = /usr/lib
     }

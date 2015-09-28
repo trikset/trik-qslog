@@ -15,18 +15,18 @@ QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
     DESTDIR = $${QSLOG_DESTDIR}/bin
 }
 
-DISTRO = $$system(uname -a)
-
 win32 {
     DEFINES += QSLOG_IS_SHARED_LIBRARY
 }
 
 unix:!macx {
+    DISTRO = $$system(uname -a)
+
     # make install will install the shared object in the appropriate folders
     headers.files = QsLog.h QsLogDest.h QsLogLevel.h
     headers.path = /usr/include/$(QMAKE_TARGET)
 
-    other_files.files = *.txt
+    other_files.files = LICENSE.txt QsLogChanges.txt README.md
     other_files.path = /usr/local/share/$(QMAKE_TARGET)
     contains(DISTRO, .*ARCH): other_files.path = /usr/share/$(QMAKE_TARGET)
 

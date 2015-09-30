@@ -41,6 +41,14 @@ set(SOURCE_FILES
 	QsLogDestFunctor.cpp
     )
 
+if(APPLE)
+	# Apple's compiler will not find standard includes like <thread> or <mutex> with 10.7 target otherwise
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
+# Use 10.7 OSX SDK
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.7")
+
 option(QS_LOG_LINE_NUMBERS "Automatically writes the file and line for each log message" OFF)
 if(QS_LOG_LINE_NUMBERS)
 	add_definitions(-DQS_LOG_LINE_NUMBERS)

@@ -24,18 +24,18 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QsLog_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QsLog_BINARY_DIR}/bin)
 
 set(HEADER_FILES
-	QsLogDest.h
 	QsLog.h
+	QsLogDest.h
 	QsLogDestConsole.h
-	QsLogLevel.h
 	QsLogDestFile.h
-	QsLogDisableForThisFile.h
 	QsLogDestFunctor.h
+	QsLogDisableForThisFile.h
+	QsLogLevel.h
     )
 
 set(SOURCE_FILES
-	QsLogDest.cpp
 	QsLog.cpp
+	QsLogDest.cpp
 	QsLogDestConsole.cpp
 	QsLogDestFile.cpp
 	QsLogDestFunctor.cpp

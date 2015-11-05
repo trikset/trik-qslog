@@ -1,4 +1,4 @@
-# CMake build support courtesy of A.Gembe
+# CMake build support courtesy of Axel Gembe <axel@gembe.net>
 cmake_minimum_required(VERSION 3.1)
 
 project(QsLog)
@@ -71,14 +71,13 @@ endif()
 
 option(QS_LOG_IS_SHARED_LIBRARY "Build shared library" ON)
 if(QS_LOG_IS_SHARED_LIBRARY)
+	set(QS_LOG_LIBRARY_TYPE SHARED)
 	add_definitions(-DQSLOG_IS_SHARED_LIBRARY)
-endif()
+else(QS_LOG_IS_SHARED_LIBRARY)
+	set(QS_LOG_LIBRARY_TYPE STATIC)
+endif(QS_LOG_IS_SHARED_LIBRARY)
 
-if(QS_LOG_IS_SHARED_LIBRARY)
-	add_library(QsLog SHARED ${HEADER_FILES} ${SOURCE_FILES})
-else()
-	add_library(QsLog STATIC ${HEADER_FILES} ${SOURCE_FILES})
-endif()
+add_library(QsLog ${QS_LOG_LIBRARY_TYPE} ${HEADER_FILES} ${SOURCE_FILES})
 
 target_link_libraries(QsLog Qt5::Core)
 

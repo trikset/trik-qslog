@@ -32,6 +32,9 @@
 #include <QtGlobal>
 class QString;
 class QObject;
+#ifdef QSLOG_WINDOW
+class QWidget;
+#endif
 
 #ifdef QSLOG_IS_SHARED_LIBRARY
 #define QSLOG_SHARED_OBJECT Q_DECL_EXPORT
@@ -104,6 +107,9 @@ public:
     static DestinationPtr MakeFunctorDestination(Destination::LogFunction f);
     // takes a QObject + signal/slot
     static DestinationPtr MakeFunctorDestination(QObject *receiver, const char *member);
+#ifdef QSLOG_WINDOW
+    static DestinationPtr MakeWindowDestination();
+#endif
 };
 
 } // end namespace

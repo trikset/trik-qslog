@@ -73,6 +73,26 @@ const char* LevelToText(Level theLevel)
     }
 }
 
+QString LevelName(Level theLevel)
+{
+    switch (theLevel) {
+    case TraceLevel:
+        return QObject::tr("Trace");
+    case DebugLevel:
+        return QObject::tr("Debug");
+    case InfoLevel:
+        return QObject::tr("Info");
+    case WarnLevel:
+        return QObject::tr("Warning");
+    case ErrorLevel:
+        return QObject::tr("Error");
+    case FatalLevel:
+        return QObject::tr("Fatal");
+    default:
+        return "";
+    }
+}
+
 #ifdef QS_LOG_SEPARATE_THREAD
 class LogWriterRunnable : public QRunnable
 {

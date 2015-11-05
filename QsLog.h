@@ -28,6 +28,7 @@
 
 #include "QsLogLevel.h"
 #include "QsLogDest.h"
+#include "QsLogMessage.h"
 #include <QDebug>
 #include <QString>
 
@@ -81,8 +82,8 @@ private:
     Logger(const Logger&);            // not available
     Logger& operator=(const Logger&); // not available
 
-    void enqueueWrite(const QString& message, Level level);
-    void write(const QString& message, Level level);
+    void enqueueWrite(const LogMessage& message);
+    void write(const LogMessage& message);
 
     LoggerImpl* d;
 

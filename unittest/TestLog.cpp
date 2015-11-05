@@ -10,7 +10,7 @@
 #include <QSharedPointer>
 #include <QtGlobal>
 
-void DummyLogFunction(const QString &, QsLogging::Level)
+void DummyLogFunction(const QsLogging::LogMessage&)
 {
 
 }

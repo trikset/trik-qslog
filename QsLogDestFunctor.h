@@ -37,7 +37,7 @@ namespace QsLogging
 // called from a different thread or even a different binary. You should not access QsLog from
 // inside LogFunction and should not perform any time-consuming operations.
 // logMessageReady is connected through a queued connection and trace messages are not included
-class FunctorDestination : public QObject, public Destination
+class QSLOG_SHARED_OBJECT FunctorDestination : public QObject, public Destination
 {
     Q_OBJECT
 public:

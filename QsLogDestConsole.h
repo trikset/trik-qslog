@@ -39,7 +39,7 @@ namespace QsLogging
 {
 
 // debugger sink
-class DebugOutputDestination : public Destination
+class QSLOG_SHARED_OBJECT DebugOutputDestination : public Destination
 {
 public:
     static const char* const Type;

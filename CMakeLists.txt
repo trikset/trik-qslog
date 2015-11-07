@@ -1,4 +1,4 @@
-# CMake build support courtesy of A.Gembe
+# CMake build support courtesy of Axel Gembe <axel@gembe.net>
 cmake_minimum_required(VERSION 3.1)
 
 project(QsLog)
@@ -18,28 +18,39 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 find_package(Qt5Core REQUIRED)
 set(CMAKE_AUTOMOC ON)
 
+# As moc files are generated in the binary dir, tell to always look for includes there
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 # Specify build paths
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${QsLog_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QsLog_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QsLog_BINARY_DIR}/bin)
 
 set(HEADER_FILES
-	QsLogDest.h
 	QsLog.h
+	QsLogDest.h
 	QsLogDestConsole.h
-	QsLogLevel.h
 	QsLogDestFile.h
-	QsLogDisableForThisFile.h
 	QsLogDestFunctor.h
+	QsLogDisableForThisFile.h
+	QsLogLevel.h
     )
 
 set(SOURCE_FILES
-	QsLogDest.cpp
 	QsLog.cpp
+	QsLogDest.cpp
 	QsLogDestConsole.cpp
 	QsLogDestFile.cpp
 	QsLogDestFunctor.cpp
     )
+
+if(APPLE)
+	# Apple's compiler will not find standard includes like <thread> or <mutex> with 10.7 target otherwise
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
+# Use 10.7 OSX SDK
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.7")
 
 option(QS_LOG_LINE_NUMBERS "Automatically writes the file and line for each log message" OFF)
 if(QS_LOG_LINE_NUMBERS)
@@ -63,16 +74,20 @@ endif()
 
 option(QS_LOG_IS_SHARED_LIBRARY "Build shared library" ON)
 if(QS_LOG_IS_SHARED_LIBRARY)
+	set(QS_LOG_LIBRARY_TYPE SHARED)
 	add_definitions(-DQSLOG_IS_SHARED_LIBRARY)
-endif()
+else(QS_LOG_IS_SHARED_LIBRARY)
+	set(QS_LOG_LIBRARY_TYPE STATIC)
+endif(QS_LOG_IS_SHARED_LIBRARY)
 
-if(QS_LOG_IS_SHARED_LIBRARY)
-	add_library(QsLog SHARED ${HEADER_FILES} ${SOURCE_FILES})
-else()
-	add_library(QsLog STATIC ${HEADER_FILES} ${SOURCE_FILES})
-endif()
+add_library(QsLog ${QS_LOG_LIBRARY_TYPE} ${HEADER_FILES} ${SOURCE_FILES})
 
 target_link_libraries(QsLog Qt5::Core)
 
 install(FILES ${HEADER_FILES} DESTINATION include/QsLog)
 QsLog_install_target(QsLog "")
+
+option(QS_LOG_BUILD_TESTS "Build unit tests" OFF)
+if(QS_LOG_BUILD_TESTS)
+	add_subdirectory(unittest)
+endif()

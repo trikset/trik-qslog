@@ -18,6 +18,9 @@ set(CMAKE_DEBUG_POSTFIX "_d")
 find_package(Qt5Core REQUIRED)
 set(CMAKE_AUTOMOC ON)
 
+# As moc files are generated in the binary dir, tell to always look for includes there
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 # Specify build paths
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${QsLog_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QsLog_BINARY_DIR}/lib)
@@ -83,3 +86,8 @@ target_link_libraries(QsLog Qt5::Core)
 
 install(FILES ${HEADER_FILES} DESTINATION include/QsLog)
 QsLog_install_target(QsLog "")
+
+option(QS_LOG_BUILD_TESTS "Build unit tests" OFF)
+if(QS_LOG_BUILD_TESTS)
+	add_subdirectory(unittest)
+endif()

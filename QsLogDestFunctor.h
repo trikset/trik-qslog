@@ -46,13 +46,13 @@ public:
     explicit FunctorDestination(LogFunction f);
     FunctorDestination(QObject *receiver, const char *member);
 
-    virtual void write(const QString &message, Level level);
+    virtual void write(const LogMessage& message);
     virtual bool isValid();
     virtual QString type() const;
 
 protected:
     // int used to avoid registering a new enum type
-    Q_SIGNAL void logMessageReady(const QString &message, int level);
+    Q_SIGNAL void logMessageReady(const LogMessage& message);
 
 private:
     LogFunction mLogFunction;

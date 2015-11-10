@@ -159,9 +159,9 @@ QsLogging::FileDestination::FileDestination(const QString& filePath, RotationStr
     mRotationStrategy->setInitialInfo(mFile);
 }
 
-void QsLogging::FileDestination::write(const QString& message, Level)
+void QsLogging::FileDestination::write(const LogMessage& message)
 {
-    mRotationStrategy->includeMessageInCalculation(message);
+    mRotationStrategy->includeMessageInCalculation(message.formatted);
     if (mRotationStrategy->shouldRotate()) {
         mOutputStream.setDevice(NULL);
         mFile.close();
@@ -174,7 +174,7 @@ void QsLogging::FileDestination::write(const QString& message, Level)
         mOutputStream.setCodec(QTextCodec::codecForName("UTF-8"));
     }
 
-    mOutputStream << message << endl;
+    mOutputStream << message.formatted << endl;
     mOutputStream.flush();
 }
 

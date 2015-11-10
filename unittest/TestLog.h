@@ -21,13 +21,13 @@ public:
     };
 
 public:
-    virtual void write(const QString &message, QsLogging::Level level)
+    virtual void write(const QsLogging::LogMessage& message)
     {
         Message m;
-        m.text = message;
-        m.level = level;
+        m.text = message.formatted;
+        m.level = message.level;
         mMessages.push_back(m);
-        ++mCountByLevel[level];
+        ++mCountByLevel[message.level];
     }
 
     virtual bool isValid()

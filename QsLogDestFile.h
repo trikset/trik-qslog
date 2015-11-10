@@ -96,7 +96,7 @@ public:
     static const char* const Type;
 
     FileDestination(const QString& filePath, RotationStrategyPtr rotationStrategy);
-    virtual void write(const QString& message, Level level);
+    virtual void write(const LogMessage& message);
     virtual bool isValid();
     virtual QString type() const;
 

@@ -1,5 +1,4 @@
-// Copyright (c) 2014, Razvan Petru
-// Copyright (c) 2014, Omar Carey
+// Copyright (c) 2015, Axel Gembe <axel@gembe.net>
 // All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without modification,
@@ -24,42 +23,39 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "QsLogDestFunctor.h"
-#include <cstddef>
-#include <QtGlobal>
+#ifndef QSLOGMESSAGE_H
+#define QSLOGMESSAGE_H
+
+#include "QsLogLevel.h"
+
 #include <QString>
+#include <QDateTime>
 
-const char* const QsLogging::FunctorDestination::Type = "functor";
-
-QsLogging::FunctorDestination::FunctorDestination(LogFunction f)
-    : QObject(NULL)
-    , mLogFunction(f)
+namespace QsLogging
 {
+
+class LogMessage
+{
+public:
+    /* Needs to be accessible for qRegisterMetaType */
+    LogMessage() { }
+
+    /* Construct and format message */
+    LogMessage(const QString& m, const QDateTime& t, const Level l);
+
+    //! Log message
+    QString message;
+
+    //! Time stamp in UTC, use .toLocalTime() to get local time
+    QDateTime time;
+
+    //! Log level
+    Level level;
+
+    //! Formatted log message ([level] [time] [message])
+    QString formatted;
+};
+
 }
 
-QsLogging::FunctorDestination::FunctorDestination(QObject *receiver, const char *member)
-    : QObject(NULL)
-    , mLogFunction(NULL)
-{
-    connect(this, SIGNAL(logMessageReady(LogMessage)), receiver, member, Qt::QueuedConnection);
-}
-
-
-void QsLogging::FunctorDestination::write(const LogMessage& message)
-{
-    if (mLogFunction)
-        mLogFunction(message);
-
-    if (message.level > QsLogging::TraceLevel)
-        emit logMessageReady(message);
-}
-
-bool QsLogging::FunctorDestination::isValid()
-{
-    return true;
-}
-
-QString QsLogging::FunctorDestination::type() const
-{
-    return QString::fromLatin1(Type);
-}
+#endif // QSLOGMESSAGE_H

@@ -11,6 +11,8 @@ INCLUDEPATH += ../
 QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
 !isEmpty(QSLOG_DESTDIR) {
     DESTDIR = $${QSLOG_DESTDIR}/bin
+    OBJECTS_DIR = $${QSLOG_DESTDIR}
+    MOC_DIR = $${QSLOG_DESTDIR}
 } else {
     error(Please set the QSLOG_DESTDIR environment variable)
 }

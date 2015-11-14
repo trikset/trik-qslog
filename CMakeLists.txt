@@ -92,7 +92,7 @@ if(QS_LOG_BUILD_WINDOW)
 	list(APPEND RES_FILES QsLogDestWindow.qrc)
 	qt5_wrap_ui(UI_SOURCE_FILES ${UI_FILES})
 	qt5_add_resources(RES_SOURCE_FILES ${RES_FILES})
-	add_definitions(-DQSLOG_WINDOW)
+    add_definitions(-DQS_LOG_WINDOW)
 endif()
 
 add_library(QsLog ${QS_LOG_LIBRARY_TYPE} ${HEADER_FILES} ${SOURCE_FILES} ${UI_SOURCE_FILES} ${RES_SOURCE_FILES})

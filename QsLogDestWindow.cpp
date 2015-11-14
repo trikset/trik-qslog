@@ -78,14 +78,16 @@ public:
 
     virtual int columnCount(const QModelIndex& parent = QModelIndex()) const
     {
+        Q_UNUSED(parent);
         return 3;
     }
 
     virtual int rowCount(const QModelIndex& parent = QModelIndex()) const
     {
-        QReadLocker lock(const_cast<QReadWriteLock*>(&data_lock_));
+        Q_UNUSED(parent);
+        QReadLocker lock(&data_lock_);
 
-        return (int)data_.size();
+        return static_cast<int>(data_.size());
     }
 
     virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const
@@ -94,9 +96,9 @@ public:
             return QVariant();
 
         if (role == Qt::DisplayRole) {
-            QReadLocker lock(const_cast<QReadWriteLock*>(&data_lock_));
+            QReadLocker lock(&data_lock_);
 
-            auto item = data_.at(index.row());
+            const LogMessage& item = data_.at(index.row());
 
             switch (index.column()) {
             case 0:
@@ -115,9 +117,9 @@ public:
         }
 
         if (role == Qt::BackgroundColorRole) {
-            QReadLocker lock(const_cast<QReadWriteLock*>(&data_lock_));
+            QReadLocker lock(&data_lock_);
 
-            auto item = data_.at(index.row());
+            const LogMessage& item = data_.at(index.row());
 
             switch (item.level)
             {
@@ -127,6 +129,8 @@ public:
                 return QVariant(QColor(255, 128, 128));
             case QsLogging::FatalLevel:
                 return QVariant(QColor(255, 0, 0));
+            default:
+                break;
             }
         }
 
@@ -149,7 +153,7 @@ public:
 
     void addEntry(const LogMessage& message)
     {
-        auto next_idx = (int)data_.size();
+        const int next_idx = static_cast<int>(data_.size());
         beginInsertRows(QModelIndex(), next_idx, next_idx);
         {
             QWriteLocker lock(&data_lock_);
@@ -163,8 +167,8 @@ public:
                 data_.pop_front();
             }
             /* Every item changed */
-            auto idx1 = index(0, 0);
-            auto idx2 = index((int)data_.size(), rowCount());
+            const QModelIndex idx1 = index(0, 0);
+            const QModelIndex idx2 = index(static_cast<int>(data_.size()), rowCount());
             emit dataChanged(idx1, idx2);
         }
     }
@@ -186,7 +190,7 @@ public:
 
 private:
     std::deque<LogMessage> data_;
-    QReadWriteLock data_lock_;
+    mutable QReadWriteLock data_lock_;
     size_t max_items_;
 };
 
@@ -215,8 +219,9 @@ public:
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
     {
-        auto model = dynamic_cast<WindowLogDataModel*>(sourceModel());
-        auto d = model->at(source_row);
+        Q_UNUSED(source_parent);
+        WindowLogDataModel* model = dynamic_cast<WindowLogDataModel*>(sourceModel());
+        const LogMessage& d = model->at(source_row);
         return (d.level >= level_);
     }
 
@@ -247,7 +252,7 @@ QsLogging::WindowDestination::WindowDestination()
     connect(model_, SIGNAL(rowsInserted(const QModelIndex&, int, int)), SLOT(ModelRowsInserted(const QModelIndex&, int, int)));
 
     /* Install the sort / filter model */
-    sort_filter_ = new WindowLogFilterProxyModel(Level::InfoLevel, this);
+    sort_filter_ = new WindowLogFilterProxyModel(InfoLevel, this);
     sort_filter_->setSourceModel(model_);
     ui_->tableViewMessages->setModel(sort_filter_);
 
@@ -260,11 +265,11 @@ QsLogging::WindowDestination::WindowDestination()
     ui_->tableViewMessages->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     /* Initialize log level selection */
-    for (int l = Level::TraceLevel; l < Level::OffLevel; l++) {
-        auto ln = LevelName((Level)l);
+    for (int l = TraceLevel; l < OffLevel; l++) {
+        const QString ln = LevelName(static_cast<Level>(l));
         ui_->comboBoxLevel->addItem(ln, l);
     }
-    ui_->comboBoxLevel->setCurrentIndex(Level::InfoLevel);
+    ui_->comboBoxLevel->setCurrentIndex(InfoLevel);
 }
 
 QsLogging::WindowDestination::~WindowDestination()
@@ -291,7 +296,7 @@ bool QsLogging::WindowDestination::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == ui_->tableViewMessages) {
         if (event->type() == QEvent::KeyPress) {
-            auto keyEvent = static_cast<QKeyEvent*>(event);
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
             if (keyEvent->key() == Qt::Key_C && (keyEvent->modifiers() & Qt::ControlModifier)) {
                 copySelection();
                 return true;
@@ -331,7 +336,7 @@ void QsLogging::WindowDestination::OnCopyClicked()
 
 void QsLogging::WindowDestination::OnLevelChanged(int value)
 {
-    sort_filter_->setLevel((Level)value);
+    sort_filter_->setLevel(static_cast<Level>(value));
 }
 
 void QsLogging::WindowDestination::OnAutoScrollChanged(bool checked)
@@ -341,13 +346,16 @@ void QsLogging::WindowDestination::OnAutoScrollChanged(bool checked)
 
 void QsLogging::WindowDestination::ModelRowsInserted(const QModelIndex& parent, int start, int last)
 {
+    Q_UNUSED(parent);
+    Q_UNUSED(start);
+    Q_UNUSED(last);
     if (auto_scroll_)
         ui_->tableViewMessages->scrollToBottom();
 }
 
 void QsLogging::WindowDestination::copySelection() const
 {
-    auto text = getSelectionText();
+    const QString text = getSelectionText();
     if (text.isEmpty())
         return;
 
@@ -356,7 +364,7 @@ void QsLogging::WindowDestination::copySelection() const
 
 void QsLogging::WindowDestination::saveSelection()
 {
-    auto text = getSelectionText();
+    const QString text = getSelectionText();
     if (text.isEmpty())
         return;
 
@@ -367,7 +375,7 @@ void QsLogging::WindowDestination::saveSelection()
     dialog.setDefaultSuffix("log");
     dialog.exec();
 
-    auto sel = dialog.selectedFiles();
+    const QStringList sel = dialog.selectedFiles();
     if (sel.size() < 1)
         return;
 
@@ -381,19 +389,19 @@ void QsLogging::WindowDestination::saveSelection()
 
 QString QsLogging::WindowDestination::getSelectionText() const
 {
-    auto rows = ui_->tableViewMessages->selectionModel()->selectedRows();
+    QModelIndexList rows = ui_->tableViewMessages->selectionModel()->selectedRows();
     std::sort(rows.begin(), rows.end());
 
     QString text;
 
     if (rows.count() == 0) {
-        for (auto i = 0; i < sort_filter_->rowCount(); i++) {
-            auto srow = sort_filter_->mapToSource(sort_filter_->index(i, 0)).row();
+        for (int i = 0; i < sort_filter_->rowCount(); i++) {
+            const int srow = sort_filter_->mapToSource(sort_filter_->index(i, 0)).row();
             text += model_->at(srow).formatted + "\n";
         }
     } else {
-        for (auto row : rows) {
-            auto srow = sort_filter_->mapToSource(row).row();
+        for (QModelIndexList::const_iterator i = rows.begin();i != rows.end();++i) {
+            const int srow = sort_filter_->mapToSource(*i).row();
             text += model_->at(srow).formatted + "\n";
         }
     }

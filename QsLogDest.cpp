@@ -27,7 +27,7 @@
 #include "QsLogDestConsole.h"
 #include "QsLogDestFile.h"
 #include "QsLogDestFunctor.h"
-#ifdef QSLOG_WINDOW
+#ifdef QS_LOG_WINDOW
 #include "QsLogDestWindow.h"
 #endif
 #include <QString>
@@ -70,7 +70,7 @@ DestinationPtr DestinationFactory::MakeFunctorDestination(QObject *receiver, con
     return DestinationPtr(new FunctorDestination(receiver, member));
 }
 
-#ifdef QSLOG_WINDOW
+#ifdef QS_LOG_WINDOW
 DestinationPtr DestinationFactory::MakeWindowDestination()
 {
     return DestinationPtr(new WindowDestination());

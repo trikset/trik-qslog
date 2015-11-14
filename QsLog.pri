@@ -7,7 +7,8 @@ SOURCES += $$PWD/QsLogDest.cpp \
     $$PWD/QsLog.cpp \
     $$PWD/QsLogDestConsole.cpp \
     $$PWD/QsLogDestFile.cpp \
-    $$PWD/QsLogDestFunctor.cpp
+    $$PWD/QsLogDestFunctor.cpp \
+    $$PWD/QsLogMessage.cpp
 
 HEADERS += $$PWD/QsLogDest.h \
     $$PWD/QsLog.h \
@@ -15,7 +16,8 @@ HEADERS += $$PWD/QsLogDest.h \
     $$PWD/QsLogLevel.h \
     $$PWD/QsLogDestFile.h \
     $$PWD/QsLogDisableForThisFile.h \
-    $$PWD/QsLogDestFunctor.h
+    $$PWD/QsLogDestFunctor.h \
+    $$PWD/QsLogMessage.h
 
 OTHER_FILES += \
     $$PWD/QsLogChanges.txt \

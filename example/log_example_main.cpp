@@ -25,16 +25,17 @@
 
 #include "QsLog.h"
 #include "QsLogDest.h"
+#include "QsLogMessage.h"
 #include "log_example_shared.h"
 #include <QLibrary>
 #include <QCoreApplication>
 #include <QDir>
 #include <iostream>
 
-void logFunction(const QString &message, QsLogging::Level level)
+void logFunction(const QsLogging::LogMessage &message)
 {
-    std::cout << "From log function: " << qPrintable(message) << " " << static_cast<int>(level)
-              << std::endl;
+    std::cout << "From log function: " << qPrintable(message.formatted)
+              << " " << static_cast<int>(message.level) << std::endl;
 }
 
 // This small example shows how QsLog can be used inside a project.

@@ -71,9 +71,9 @@ DestinationPtr DestinationFactory::MakeFunctorDestination(QObject *receiver, con
 }
 
 #ifdef QS_LOG_WINDOW
-DestinationPtr DestinationFactory::MakeWindowDestination()
+DestinationPtr DestinationFactory::MakeWindowDestination(size_t max_items)
 {
-    return DestinationPtr(new WindowDestination());
+    return DestinationPtr(new WindowDestination(max_items));
 }
 #endif
 

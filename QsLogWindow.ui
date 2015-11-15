@@ -22,8 +22,8 @@
         <string>&amp;Pause</string>
        </property>
        <property name="icon">
-        <iconset resource="QsLogDestWindow.qrc">
-         <normaloff>:/QsLogDestWindow/images/icon-pause-16.png</normaloff>:/QsLogDestWindow/images/icon-pause-16.png</iconset>
+        <iconset resource="QsLogWindow.qrc">
+         <normaloff>:/QsLogWindow/images/icon-pause-16.png</normaloff>:/QsLogWindow/images/icon-pause-16.png</iconset>
        </property>
        <property name="toolButtonStyle">
         <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -39,8 +39,8 @@
         <string>&amp;Save</string>
        </property>
        <property name="icon">
-        <iconset resource="QsLogDestWindow.qrc">
-         <normaloff>:/QsLogDestWindow/images/icon-save-16.png</normaloff>:/QsLogDestWindow/images/icon-save-16.png</iconset>
+        <iconset resource="QsLogWindow.qrc">
+         <normaloff>:/QsLogWindow/images/icon-save-16.png</normaloff>:/QsLogWindow/images/icon-save-16.png</iconset>
        </property>
        <property name="toolButtonStyle">
         <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -56,8 +56,8 @@
         <string>C&amp;lear</string>
        </property>
        <property name="icon">
-        <iconset resource="QsLogDestWindow.qrc">
-         <normaloff>:/QsLogDestWindow/images/icon-clear-16.png</normaloff>:/QsLogDestWindow/images/icon-clear-16.png</iconset>
+        <iconset resource="QsLogWindow.qrc">
+         <normaloff>:/QsLogWindow/images/icon-clear-16.png</normaloff>:/QsLogWindow/images/icon-clear-16.png</iconset>
        </property>
        <property name="toolButtonStyle">
         <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -73,8 +73,8 @@
         <string>&amp;Copy</string>
        </property>
        <property name="icon">
-        <iconset resource="QsLogDestWindow.qrc">
-         <normaloff>:/QsLogDestWindow/images/icon-copy-16.png</normaloff>:/QsLogDestWindow/images/icon-copy-16.png</iconset>
+        <iconset resource="QsLogWindow.qrc">
+         <normaloff>:/QsLogWindow/images/icon-copy-16.png</normaloff>:/QsLogWindow/images/icon-copy-16.png</iconset>
        </property>
        <property name="toolButtonStyle">
         <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -167,7 +167,7 @@
   <tabstop>checkBoxAutoScroll</tabstop>
  </tabstops>
  <resources>
-  <include location="QsLogDestWindow.qrc"/>
+  <include location="QsLogWindow.qrc"/>
  </resources>
  <connections/>
 </ui>

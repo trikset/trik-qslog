@@ -23,51 +23,54 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSLOGDESTWINDOW_H
-#define QSLOGDESTWINDOW_H
+#ifndef QSLOGWINDOW_H
+#define QSLOGWINDOW_H
 
-#include "QsLogDest.h"
+#include "QsLogDestWindow.h"
 
-#include <QAbstractTableModel>
-#include <QReadWriteLock>
+#include <QDialog>
+#include <QSharedPointer>
 
-#include <limits>
-#include <deque>
+namespace Ui {
+class LogWindow;
+} /* Ui */
 
 namespace QsLogging
 {
 
-class QSLOG_SHARED_OBJECT WindowDestination : public QAbstractTableModel, public Destination
+class WindowLogFilterProxyModel;
+
+class QSLOG_SHARED_OBJECT Window : public QDialog
 {
     Q_OBJECT
 
 public:
-    static const char* const Type;
+    explicit Window(DestinationPtr destination, QWidget* parent = 0);
+    virtual ~Window();
 
-    explicit WindowDestination(size_t max_items = std::numeric_limits<size_t>::max());
-    virtual ~WindowDestination();
+    virtual bool eventFilter(QObject* obj, QEvent* event);
 
-    void addEntry(const LogMessage& message);
-    void clear();
-    LogMessage at(size_t index);
-
-    /* Destination overrides */
-    virtual void write(const LogMessage& message);
-    virtual bool isValid();
-    virtual QString type() const;
-
-    /* QAbstractTableModel overrides */
-    virtual int columnCount(const QModelIndex& parent = QModelIndex()) const;
-    virtual int rowCount(const QModelIndex& parent = QModelIndex()) const;
-    virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
-    virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+private slots:
+    void OnPauseClicked();
+    void OnSaveClicked();
+    void OnClearClicked();
+    void OnCopyClicked();
+    void OnLevelChanged(int value);
+    void OnAutoScrollChanged(bool checked);
+    void ModelRowsInserted(const QModelIndex& parent, int start, int last);
 
 private:
-    std::deque<LogMessage> data_;
-    mutable QReadWriteLock data_lock_;
-    size_t max_items_;
+    void copySelection() const;
+    void saveSelection();
+    QString getSelectionText() const;
+
+    Ui::LogWindow* ui_;
+    QSharedPointer<WindowDestination> destination_;
+    WindowLogFilterProxyModel* sort_filter_;
+    bool paused_;
+    bool auto_scroll_;
 };
 
 }
 
-#endif // QSLOGDESTWINDOW_H
+#endif // QSLOGWINDOW_H

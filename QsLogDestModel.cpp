@@ -23,103 +23,103 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "QsLogDestWindow.h"
+#include "QsLogDestModel.h"
 #include "QsLog.h"
 
 #include <QColor>
 
-const char* const QsLogging::WindowDestination::Type = "window";
+const char* const QsLogging::ModelDestination::Type = "window";
 
-QsLogging::WindowDestination::WindowDestination(size_t max_items) :
-    max_items_(max_items)
+QsLogging::ModelDestination::ModelDestination(size_t max_items) :
+    mMaxItems(max_items)
 {
 }
 
-QsLogging::WindowDestination::~WindowDestination()
+QsLogging::ModelDestination::~ModelDestination()
 {
 }
 
-void QsLogging::WindowDestination::write(const LogMessage& message)
+void QsLogging::ModelDestination::write(const LogMessage& message)
 {
     addEntry(message);
 }
 
-bool QsLogging::WindowDestination::isValid()
+bool QsLogging::ModelDestination::isValid()
 {
     return true;
 }
 
-QString QsLogging::WindowDestination::type() const
+QString QsLogging::ModelDestination::type() const
 {
     return QString::fromLatin1(Type);
 }
 
-void QsLogging::WindowDestination::addEntry(const LogMessage& message)
+void QsLogging::ModelDestination::addEntry(const LogMessage& message)
 {
-    const int next_idx = static_cast<int>(data_.size());
+    const int next_idx = static_cast<int>(mLogMessages.size());
     beginInsertRows(QModelIndex(), next_idx, next_idx);
     {
-        QWriteLocker lock(&data_lock_);
-        data_.push_back(message);
+        QWriteLocker lock(&mMessagesLock);
+        mLogMessages.push_back(message);
     }
     endInsertRows();
 
-    if (max_items_ < std::numeric_limits<size_t>::max() && data_.size() > max_items_) {
+    if (mMaxItems < std::numeric_limits<size_t>::max() && mLogMessages.size() > mMaxItems) {
         {
-            QWriteLocker lock(&data_lock_);
-            data_.pop_front();
+            QWriteLocker lock(&mMessagesLock);
+            mLogMessages.pop_front();
         }
-        /* Every item changed */
+        // Every item changed
         const QModelIndex idx1 = index(0, 0);
-        const QModelIndex idx2 = index(static_cast<int>(data_.size()), rowCount());
+        const QModelIndex idx2 = index(static_cast<int>(mLogMessages.size()), rowCount());
         emit dataChanged(idx1, idx2);
     }
 }
 
-void QsLogging::WindowDestination::clear()
+void QsLogging::ModelDestination::clear()
 {
     beginResetModel();
     {
-        QWriteLocker lock(&data_lock_);
-        data_.clear();
+        QWriteLocker lock(&mMessagesLock);
+        mLogMessages.clear();
     }
     endResetModel();
 }
 
-QsLogging::LogMessage QsLogging::WindowDestination::at(size_t index)
+QsLogging::LogMessage QsLogging::ModelDestination::at(size_t index)
 {
-    return data_[index];
+    return mLogMessages[index];
 }
 
-int QsLogging::WindowDestination::columnCount(const QModelIndex& parent) const
+int QsLogging::ModelDestination::columnCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent);
     return 3;
 }
 
-int QsLogging::WindowDestination::rowCount(const QModelIndex& parent) const
+int QsLogging::ModelDestination::rowCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent);
-    QReadLocker lock(&data_lock_);
+    QReadLocker lock(&mMessagesLock);
 
-    return static_cast<int>(data_.size());
+    return static_cast<int>(mLogMessages.size());
 }
 
-QVariant QsLogging::WindowDestination::data(const QModelIndex& index, int role) const
+QVariant QsLogging::ModelDestination::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid())
         return QVariant();
 
     if (role == Qt::DisplayRole) {
-        QReadLocker lock(&data_lock_);
+        QReadLocker lock(&mMessagesLock);
 
-        const LogMessage& item = data_.at(index.row());
+        const LogMessage& item = mLogMessages.at(index.row());
 
         switch (index.column()) {
         case 0:
             return item.time.toLocalTime().toString();
         case 1:
-            return LevelName(item.level);
+            return LocalizedLevelName(item.level);
         case 2:
             return item.message;
         case 100:
@@ -132,9 +132,9 @@ QVariant QsLogging::WindowDestination::data(const QModelIndex& index, int role) 
     }
 
     if (role == Qt::BackgroundColorRole) {
-        QReadLocker lock(&data_lock_);
+        QReadLocker lock(&mMessagesLock);
 
-        const LogMessage& item = data_.at(index.row());
+        const LogMessage& item = mLogMessages.at(index.row());
 
         switch (item.level)
         {
@@ -152,7 +152,7 @@ QVariant QsLogging::WindowDestination::data(const QModelIndex& index, int role) 
     return QVariant();
 }
 
-QVariant QsLogging::WindowDestination::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant QsLogging::ModelDestination::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
         switch (section) {

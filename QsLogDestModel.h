@@ -23,8 +23,8 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSLOGDESTWINDOW_H
-#define QSLOGDESTWINDOW_H
+#ifndef QSLOGDESTMODEL_H
+#define QSLOGDESTMODEL_H
 
 #include "QsLogDest.h"
 
@@ -37,37 +37,37 @@
 namespace QsLogging
 {
 
-class QSLOG_SHARED_OBJECT WindowDestination : public QAbstractTableModel, public Destination
+class QSLOG_SHARED_OBJECT ModelDestination : public QAbstractTableModel, public Destination
 {
     Q_OBJECT
 
 public:
     static const char* const Type;
 
-    explicit WindowDestination(size_t max_items = std::numeric_limits<size_t>::max());
-    virtual ~WindowDestination();
+    explicit ModelDestination(size_t max_items = std::numeric_limits<size_t>::max());
+    virtual ~ModelDestination();
 
     void addEntry(const LogMessage& message);
     void clear();
     LogMessage at(size_t index);
 
-    /* Destination overrides */
+    // Destination overrides
     virtual void write(const LogMessage& message);
     virtual bool isValid();
     virtual QString type() const;
 
-    /* QAbstractTableModel overrides */
+    // QAbstractTableModel overrides
     virtual int columnCount(const QModelIndex& parent = QModelIndex()) const;
     virtual int rowCount(const QModelIndex& parent = QModelIndex()) const;
     virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
 
 private:
-    std::deque<LogMessage> data_;
-    mutable QReadWriteLock data_lock_;
-    size_t max_items_;
+    std::deque<LogMessage> mLogMessages;
+    mutable QReadWriteLock mMessagesLock;
+    size_t mMaxItems;
 };
 
 }
 
-#endif // QSLOGDESTWINDOW_H
+#endif // QSLOGDESTMODEL_H

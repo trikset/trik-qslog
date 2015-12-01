@@ -9,10 +9,10 @@ contains(DEFINES, QS_LOG_WINDOW) {
     message("Will include log window destination")
     QT += gui
     greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
-    SOURCES += QsLogDestWindow.cpp QsLogWindow.cpp
-    HEADERS += QsLogDestWindow.h QsLogWindow.h
-    FORMS   += QsLogWindow.ui
-    RESOURCES += QsLogWindow.qrc
+    SOURCES += $$PWD/QsLogDestModel.cpp $$PWD/QsLogWindow.cpp
+    HEADERS += $$PWD/QsLogDestModel.h $$PWD/QsLogWindow.h
+    FORMS   += $$PWD/QsLogWindow.ui
+    RESOURCES += $$PWD/QsLogWindow.qrc
 }
 
 SOURCES += $$PWD/QsLogDest.cpp \
@@ -20,7 +20,8 @@ SOURCES += $$PWD/QsLogDest.cpp \
     $$PWD/QsLogDestConsole.cpp \
     $$PWD/QsLogDestFile.cpp \
     $$PWD/QsLogDestFunctor.cpp \
-    $$PWD/QsLogMessage.cpp
+    $$PWD/QsLogMessage.cpp \
+    $$PWD/QsLogLevel.cpp
 
 HEADERS += $$PWD/QsLogDest.h \
     $$PWD/QsLog.h \

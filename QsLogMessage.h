@@ -34,14 +34,11 @@
 namespace QsLogging
 {
 
-class LogMessage
+struct LogMessage
 {
-public:
-    /* Needs to be accessible for qRegisterMetaType */
-    LogMessage() { }
+    LogMessage() { } // Needs to be accessible for qRegisterMetaType
 
-    /* Construct and format message */
-    LogMessage(const QString& m, const QDateTime& t, const Level l);
+    LogMessage(const QString& m, const QDateTime& t, const Level l); // Construct and format message
 
     //! Log message
     QString message;
@@ -53,7 +50,7 @@ public:
     Level level;
 
     //! Formatted log message ([level] [time] [message])
-    QString formatted;
+    const QString formatted;
 };
 
 }

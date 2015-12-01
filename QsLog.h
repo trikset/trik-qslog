@@ -37,8 +37,6 @@
 namespace QsLogging
 {
 
-QString LevelName(Level theLevel);
-
 class Destination;
 class LoggerImpl; // d pointer
 

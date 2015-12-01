@@ -26,14 +26,14 @@
 #ifndef QSLOGWINDOW_H
 #define QSLOGWINDOW_H
 
-#include "QsLogDestWindow.h"
+#include "QsLogDestModel.h"
 
 #include <QDialog>
 #include <QSharedPointer>
 
 namespace Ui {
 class LogWindow;
-} /* Ui */
+}
 
 namespace QsLogging
 {
@@ -64,11 +64,11 @@ private:
     void saveSelection();
     QString getSelectionText() const;
 
-    Ui::LogWindow* ui_;
-    QSharedPointer<WindowDestination> destination_;
-    WindowLogFilterProxyModel* sort_filter_;
-    bool paused_;
-    bool auto_scroll_;
+    Ui::LogWindow* mUi;
+    QSharedPointer<ModelDestination> mModelDestination;
+    WindowLogFilterProxyModel* mProxyModel;
+    bool mIsPaused;
+    bool mHasAutoScroll;
 };
 
 }

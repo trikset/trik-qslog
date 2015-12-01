@@ -86,7 +86,7 @@ protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
     {
         Q_UNUSED(source_parent);
-        WindowDestination* model = dynamic_cast<WindowDestination*>(sourceModel());
+        ModelDestination* model = dynamic_cast<ModelDestination*>(sourceModel());
         const LogMessage& d = model->at(source_row);
         return (d.level >= level_);
     }
@@ -98,55 +98,55 @@ private:
 QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent) :
     QDialog(parent)
 {
-    destination_ = destination.dynamicCast<WindowDestination>();
+    mModelDestination = destination.dynamicCast<ModelDestination>();
     if (!destination.data())
-        assert(!"log window needs a destination of type WindowDestination");
+        assert(!"log window needs a destination of type ModelDestination");
 
-    ui_ = new Ui::LogWindow();
-    ui_->setupUi(this);
+    mUi = new Ui::LogWindow();
+    mUi->setupUi(this);
 
     g_resources.init();
 
-    paused_ = false;
-    auto_scroll_ = true;
+    mIsPaused = false;
+    mHasAutoScroll = true;
 
-    connect(ui_->toolButtonPause, SIGNAL(clicked()), SLOT(OnPauseClicked()));
-    connect(ui_->toolButtonSave, SIGNAL(clicked()), SLOT(OnSaveClicked()));
-    connect(ui_->toolButtonClear, SIGNAL(clicked()), SLOT(OnClearClicked()));
-    connect(ui_->toolButtonCopy, SIGNAL(clicked()), SLOT(OnCopyClicked()));
-    connect(ui_->comboBoxLevel, SIGNAL(currentIndexChanged(int)), SLOT(OnLevelChanged(int)));
-    connect(ui_->checkBoxAutoScroll, SIGNAL(toggled(bool)), SLOT(OnAutoScrollChanged(bool)));
-    connect(destination_.data(), SIGNAL(rowsInserted(const QModelIndex&, int, int)), SLOT(ModelRowsInserted(const QModelIndex&, int, int)));
+    connect(mUi->toolButtonPause, SIGNAL(clicked()), SLOT(OnPauseClicked()));
+    connect(mUi->toolButtonSave, SIGNAL(clicked()), SLOT(OnSaveClicked()));
+    connect(mUi->toolButtonClear, SIGNAL(clicked()), SLOT(OnClearClicked()));
+    connect(mUi->toolButtonCopy, SIGNAL(clicked()), SLOT(OnCopyClicked()));
+    connect(mUi->comboBoxLevel, SIGNAL(currentIndexChanged(int)), SLOT(OnLevelChanged(int)));
+    connect(mUi->checkBoxAutoScroll, SIGNAL(toggled(bool)), SLOT(OnAutoScrollChanged(bool)));
+    connect(mModelDestination.data(), SIGNAL(rowsInserted(const QModelIndex&, int, int)), SLOT(ModelRowsInserted(const QModelIndex&, int, int)));
 
     /* Install the sort / filter model */
-    sort_filter_ = new WindowLogFilterProxyModel(InfoLevel, this);
-    sort_filter_->setSourceModel(destination_.data());
-    ui_->tableViewMessages->setModel(sort_filter_);
+    mProxyModel = new WindowLogFilterProxyModel(InfoLevel, this);
+    mProxyModel->setSourceModel(mModelDestination.data());
+    mUi->tableViewMessages->setModel(mProxyModel);
 
-    ui_->tableViewMessages->installEventFilter(this);
+    mUi->tableViewMessages->installEventFilter(this);
 
-    ui_->tableViewMessages->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui_->tableViewMessages->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    ui_->tableViewMessages->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    ui_->tableViewMessages->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
-    ui_->tableViewMessages->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->setSelectionBehavior(QAbstractItemView::SelectRows);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    mUi->tableViewMessages->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-    /* Initialize log level selection */
+    // Initialize log level selection
     for (int l = TraceLevel; l < OffLevel; l++) {
-        const QString ln = LevelName(static_cast<Level>(l));
-        ui_->comboBoxLevel->addItem(ln, l);
+        const QString ln = LocalizedLevelName(static_cast<Level>(l));
+        mUi->comboBoxLevel->addItem(ln, l);
     }
-    ui_->comboBoxLevel->setCurrentIndex(InfoLevel);
+    mUi->comboBoxLevel->setCurrentIndex(InfoLevel);
 }
 
 QsLogging::Window::~Window()
 {
-    delete ui_;
+    delete mUi;
 }
 
 bool QsLogging::Window::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == ui_->tableViewMessages) {
+    if (obj == mUi->tableViewMessages) {
         if (event->type() == QEvent::KeyPress) {
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
             if (keyEvent->key() == Qt::Key_C && (keyEvent->modifiers() & Qt::ControlModifier)) {
@@ -163,12 +163,12 @@ bool QsLogging::Window::eventFilter(QObject *obj, QEvent *event)
 
 void QsLogging::Window::OnPauseClicked()
 {
-    ui_->toolButtonPause->setIcon(paused_ ? g_resources.pauseIcon : g_resources.playIcon);
-    ui_->toolButtonPause->setText(paused_ ? tr("&Pause") : tr("&Resume"));
+    mUi->toolButtonPause->setIcon(mIsPaused ? g_resources.pauseIcon : g_resources.playIcon);
+    mUi->toolButtonPause->setText(mIsPaused ? tr("&Pause") : tr("&Resume"));
 
-    paused_ = !paused_;
+    mIsPaused = !mIsPaused;
 
-    ui_->tableViewMessages->setUpdatesEnabled(!paused_);
+    mUi->tableViewMessages->setUpdatesEnabled(!mIsPaused);
 }
 
 void QsLogging::Window::OnSaveClicked()
@@ -178,7 +178,7 @@ void QsLogging::Window::OnSaveClicked()
 
 void QsLogging::Window::OnClearClicked()
 {
-    destination_->clear();
+    mModelDestination->clear();
 }
 
 void QsLogging::Window::OnCopyClicked()
@@ -188,12 +188,12 @@ void QsLogging::Window::OnCopyClicked()
 
 void QsLogging::Window::OnLevelChanged(int value)
 {
-    sort_filter_->setLevel(static_cast<Level>(value));
+    mProxyModel->setLevel(static_cast<Level>(value));
 }
 
 void QsLogging::Window::OnAutoScrollChanged(bool checked)
 {
-    auto_scroll_ = checked;
+    mHasAutoScroll = checked;
 }
 
 void QsLogging::Window::ModelRowsInserted(const QModelIndex& parent, int start, int last)
@@ -201,8 +201,8 @@ void QsLogging::Window::ModelRowsInserted(const QModelIndex& parent, int start, 
     Q_UNUSED(parent);
     Q_UNUSED(start);
     Q_UNUSED(last);
-    if (auto_scroll_)
-        ui_->tableViewMessages->scrollToBottom();
+    if (mHasAutoScroll)
+        mUi->tableViewMessages->scrollToBottom();
 }
 
 void QsLogging::Window::copySelection() const
@@ -241,20 +241,20 @@ void QsLogging::Window::saveSelection()
 
 QString QsLogging::Window::getSelectionText() const
 {
-    QModelIndexList rows = ui_->tableViewMessages->selectionModel()->selectedRows();
+    QModelIndexList rows = mUi->tableViewMessages->selectionModel()->selectedRows();
     std::sort(rows.begin(), rows.end());
 
     QString text;
 
     if (rows.count() == 0) {
-        for (int i = 0; i < sort_filter_->rowCount(); i++) {
-            const int srow = sort_filter_->mapToSource(sort_filter_->index(i, 0)).row();
-            text += destination_->at(srow).formatted + "\n";
+        for (int i = 0; i < mProxyModel->rowCount(); i++) {
+            const int srow = mProxyModel->mapToSource(mProxyModel->index(i, 0)).row();
+            text += mModelDestination->at(srow).formatted + "\n";
         }
     } else {
         for (QModelIndexList::const_iterator i = rows.begin();i != rows.end();++i) {
-            const int srow = sort_filter_->mapToSource(*i).row();
-            text += destination_->at(srow).formatted + "\n";
+            const int srow = mProxyModel->mapToSource(*i).row();
+            text += mModelDestination->at(srow).formatted + "\n";
         }
     }
 

@@ -11,6 +11,7 @@ SOURCES += TestLog.cpp
 HEADERS += TestLog.h
 
 # component sources
+DEFINES += QS_LOG_WINDOW
 include(../QsLog.pri)
 
 SOURCES += \

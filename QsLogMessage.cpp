@@ -29,18 +29,18 @@
 namespace QsLogging
 {
 
-const char* LevelToText(Level theLevel);
+// not using Qt::ISODate because we need the milliseconds too
+static const char DateTimePattern[] = "yyyy-MM-ddThh:mm:ss.zzz";
 
-LogMessage::LogMessage(const QString& m, const QDateTime& t, const Level l) :
-    message(m),
-    time(t),
-    level(l)
+LogMessage::LogMessage(const QString& m, const QDateTime& t, const Level l)
+    : message(m)
+    , time(t)
+    , level(l)
+    , formatted(QString("%1 %2 %3").arg(LevelName(level))
+        .arg(t.toLocalTime().toString(DateTimePattern))
+        .arg(message))
 {
-    formatted = QString("%1 %2 %3")
-        .arg(LevelToText(level))
-        // not using Qt::ISODate because we need the milliseconds too
-        .arg(t.toLocalTime().toString("yyyy-MM-ddThh:mm:ss.zzz"))
-        .arg(message);
+
 }
 
 }

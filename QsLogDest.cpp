@@ -28,7 +28,7 @@
 #include "QsLogDestFile.h"
 #include "QsLogDestFunctor.h"
 #ifdef QS_LOG_WINDOW
-#include "QsLogDestWindow.h"
+#include "QsLogDestModel.h"
 #endif
 #include <QString>
 
@@ -73,7 +73,7 @@ DestinationPtr DestinationFactory::MakeFunctorDestination(QObject *receiver, con
 #ifdef QS_LOG_WINDOW
 DestinationPtr DestinationFactory::MakeWindowDestination(size_t max_items)
 {
-    return DestinationPtr(new WindowDestination(max_items));
+    return DestinationPtr(new ModelDestination(max_items));
 }
 #endif
 

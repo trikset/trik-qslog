@@ -42,57 +42,6 @@ namespace QsLogging
 {
 typedef QVector<DestinationPtr> DestinationList;
 
-static const char TraceString[] = "TRACE";
-static const char DebugString[] = "DEBUG";
-static const char InfoString[]  = "INFO ";
-static const char WarnString[]  = "WARN ";
-static const char ErrorString[] = "ERROR";
-static const char FatalString[] = "FATAL";
-
-const char* LevelToText(Level theLevel)
-{
-    switch (theLevel) {
-        case TraceLevel:
-            return TraceString;
-        case DebugLevel:
-            return DebugString;
-        case InfoLevel:
-            return InfoString;
-        case WarnLevel:
-            return WarnString;
-        case ErrorLevel:
-            return ErrorString;
-        case FatalLevel:
-            return FatalString;
-        case OffLevel:
-            return "";
-        default: {
-            assert(!"bad log level");
-            return InfoString;
-        }
-    }
-}
-
-QString LevelName(Level theLevel)
-{
-    switch (theLevel) {
-    case TraceLevel:
-        return QObject::tr("Trace");
-    case DebugLevel:
-        return QObject::tr("Debug");
-    case InfoLevel:
-        return QObject::tr("Info");
-    case WarnLevel:
-        return QObject::tr("Warning");
-    case ErrorLevel:
-        return QObject::tr("Error");
-    case FatalLevel:
-        return QObject::tr("Fatal");
-    default:
-        return "";
-    }
-}
-
 #ifdef QS_LOG_SEPARATE_THREAD
 class LogWriterRunnable : public QRunnable
 {
@@ -160,20 +109,22 @@ Logger& Logger::instance()
 // contain the conversion result.
 Level Logger::levelFromLogMessage(const QString& logMessage, bool* conversionSucceeded)
 {
+    using namespace QsLogging;
+
     if (conversionSucceeded)
         *conversionSucceeded = true;
 
-    if (logMessage.startsWith(QLatin1String(TraceString)))
+    if (logMessage.startsWith(QLatin1String(LevelName(TraceLevel))))
         return TraceLevel;
-    if (logMessage.startsWith(QLatin1String(DebugString)))
+    if (logMessage.startsWith(QLatin1String(LevelName(DebugLevel))))
         return DebugLevel;
-    if (logMessage.startsWith(QLatin1String(InfoString)))
+    if (logMessage.startsWith(QLatin1String(LevelName(InfoLevel))))
         return InfoLevel;
-    if (logMessage.startsWith(QLatin1String(WarnString)))
+    if (logMessage.startsWith(QLatin1String(LevelName(WarnLevel))))
         return WarnLevel;
-    if (logMessage.startsWith(QLatin1String(ErrorString)))
+    if (logMessage.startsWith(QLatin1String(LevelName(ErrorLevel))))
         return ErrorLevel;
-    if (logMessage.startsWith(QLatin1String(FatalString)))
+    if (logMessage.startsWith(QLatin1String(LevelName(FatalLevel))))
         return FatalLevel;
 
     if (conversionSucceeded)

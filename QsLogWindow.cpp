@@ -56,32 +56,46 @@ class QsLogging::WindowLogFilterProxyModel : public QSortFilterProxyModel
 public:
     WindowLogFilterProxyModel(Level level, QObject* parent = 0)
         : QSortFilterProxyModel(parent)
-        , level_(level)
+        , mLevel(level)
+        , mLastVisibleRow(0)
     {
     }
 
     Level level() const
     {
-        return level_;
+        return mLevel;
     }
 
     void setLevel(const Level level)
     {
-        level_ = level;
+        mLevel = level;
         invalidateFilter();
+    }
+
+    void setPaused(bool paused)
+    {
+        mLastVisibleRow = paused ? rowCount() : 0;
+        if (!paused) {
+            invalidateFilter();
+        }
     }
 
 protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
     {
         Q_UNUSED(source_parent);
-        ModelDestination* model = dynamic_cast<ModelDestination*>(sourceModel());
-        const LogMessage& d = model->at(source_row);
-        return d.level >= level_;
+        if (!mLastVisibleRow) {
+            ModelDestination* model = dynamic_cast<ModelDestination*>(sourceModel());
+            const LogMessage& d = model->at(source_row);
+            return d.level >= mLevel;
+        }
+
+        return source_row <= mLastVisibleRow;
     }
 
 private:
-    Level level_;
+    Level mLevel;
+    int mLastVisibleRow;
 };
 
 QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent)
@@ -155,7 +169,7 @@ void QsLogging::Window::OnPauseClicked()
 
     mIsPaused = !mIsPaused;
 
-    mUi->tableViewMessages->setUpdatesEnabled(!mIsPaused);
+    mProxyModel->setPaused(mIsPaused);
 }
 
 void QsLogging::Window::OnSaveClicked()

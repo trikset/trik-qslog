@@ -38,13 +38,13 @@
 
 static const QIcon& pauseIcon()
 {
-    static QIcon icon(QStringLiteral(":/QsLogWindow/images/icon-pause-16.png"));
+    static QIcon icon(QString::fromLatin1(":/QsLogWindow/images/icon-pause-16.png"));
     return icon;
 }
 
 static const QIcon& playIcon()
 {
-    static QIcon icon(QStringLiteral(":/QsLogWindow/images/icon-resume-16.png"));
+    static QIcon icon(QString::fromLatin1(":/QsLogWindow/images/icon-resume-16.png"));
     return icon;
 }
 
@@ -127,10 +127,17 @@ QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent
     mUi->tableViewMessages->installEventFilter(this);
 
     mUi->tableViewMessages->setSelectionBehavior(QAbstractItemView::SelectRows);
+#if QT_VERSION >= 0x050000
     mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::TimeColumn, QHeaderView::ResizeToContents);
     mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::LevelNameColumn, QHeaderView::ResizeToContents);
     mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::MessageColumn, QHeaderView::Stretch);
     mUi->tableViewMessages->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else
+    mUi->tableViewMessages->horizontalHeader()->setResizeMode(ModelDestination::TimeColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setResizeMode(ModelDestination::LevelNameColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setResizeMode(ModelDestination::MessageColumn, QHeaderView::Stretch);
+    mUi->tableViewMessages->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+#endif
 
     // Initialize log level selection
     for (int l = TraceLevel; l < OffLevel; l++) {

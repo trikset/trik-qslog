@@ -29,6 +29,7 @@
 #include "QsLogDest.h"
 #include <QDialog>
 #include <QSharedPointer>
+class QModelIndex;
 
 namespace Ui {
 class LogWindow;

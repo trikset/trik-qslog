@@ -26,8 +26,7 @@
 #ifndef QSLOGWINDOW_H
 #define QSLOGWINDOW_H
 
-#include "QsLogDestModel.h"
-
+#include "QsLogDest.h"
 #include <QDialog>
 #include <QSharedPointer>
 
@@ -39,6 +38,7 @@ namespace QsLogging
 {
 
 class WindowLogFilterProxyModel;
+class ModelDestination;
 
 class QSLOG_SHARED_OBJECT Window : public QDialog
 {
@@ -64,8 +64,8 @@ private:
     void saveSelection();
     QString getSelectionText() const;
 
-    Ui::LogWindow* mUi;
     QSharedPointer<ModelDestination> mModelDestination;
+    Ui::LogWindow* mUi;
     WindowLogFilterProxyModel* mProxyModel;
     bool mIsPaused;
     bool mHasAutoScroll;

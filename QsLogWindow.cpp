@@ -24,50 +24,39 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "QsLogWindow.h"
+#include "QsLogDestModel.h"
 #include "QsLog.h"
-
 #include "ui_QsLogWindow.h"
 
+#include <QIcon>
 #include <QSortFilterProxyModel>
 #include <QClipboard>
 #include <QKeyEvent>
 #include <QFileDialog>
-#include <cassert>
+#include <QtGlobal>
+#include <cstddef>
 
-class Resources
+static const QIcon& pauseIcon()
 {
-public:
-    Resources()
-    {
-        initialized = false;
-    }
+    static QIcon icon(QStringLiteral(":/QsLogWindow/images/icon-pause-16.png"));
+    return icon;
+}
 
-    void init()
-    {
-        if (initialized)
-            return;
+static const QIcon& playIcon()
+{
+    static QIcon icon(QStringLiteral(":/QsLogWindow/images/icon-resume-16.png"));
+    return icon;
+}
 
-        pauseIcon.addFile(QStringLiteral(":/QsLogWindow/images/icon-pause-16.png"));
-        playIcon.addFile(QStringLiteral(":/QsLogWindow/images/icon-resume-16.png"));
-
-        initialized = true;
-    }
-
-    bool initialized;
-    QIcon pauseIcon;
-    QIcon playIcon;
-};
-
-static Resources g_resources;
 
 class QsLogging::WindowLogFilterProxyModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    WindowLogFilterProxyModel(Level level, QObject *parent = 0) :
-        QSortFilterProxyModel(parent),
-        level_(level)
+    WindowLogFilterProxyModel(Level level, QObject* parent = 0)
+        : QSortFilterProxyModel(parent)
+        , level_(level)
     {
     }
 
@@ -88,27 +77,25 @@ protected:
         Q_UNUSED(source_parent);
         ModelDestination* model = dynamic_cast<ModelDestination*>(sourceModel());
         const LogMessage& d = model->at(source_row);
-        return (d.level >= level_);
+        return d.level >= level_;
     }
 
 private:
     Level level_;
 };
 
-QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent) :
-    QDialog(parent)
+QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent)
+    : QDialog(parent)
+    , mUi(NULL)
+    , mProxyModel(NULL)
+    , mIsPaused(false)
+    , mHasAutoScroll(true)
 {
     mModelDestination = destination.dynamicCast<ModelDestination>();
-    if (!destination.data())
-        assert(!"log window needs a destination of type ModelDestination");
+    Q_ASSERT_X(destination.data(), "Window", "log window needs a destination of type ModelDestination");
 
     mUi = new Ui::LogWindow();
     mUi->setupUi(this);
-
-    g_resources.init();
-
-    mIsPaused = false;
-    mHasAutoScroll = true;
 
     connect(mUi->toolButtonPause, SIGNAL(clicked()), SLOT(OnPauseClicked()));
     connect(mUi->toolButtonSave, SIGNAL(clicked()), SLOT(OnSaveClicked()));
@@ -118,7 +105,7 @@ QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent
     connect(mUi->checkBoxAutoScroll, SIGNAL(toggled(bool)), SLOT(OnAutoScrollChanged(bool)));
     connect(mModelDestination.data(), SIGNAL(rowsInserted(const QModelIndex&, int, int)), SLOT(ModelRowsInserted(const QModelIndex&, int, int)));
 
-    /* Install the sort / filter model */
+    // Install the sort / filter model
     mProxyModel = new WindowLogFilterProxyModel(InfoLevel, this);
     mProxyModel->setSourceModel(mModelDestination.data());
     mUi->tableViewMessages->setModel(mProxyModel);
@@ -126,9 +113,9 @@ QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent
     mUi->tableViewMessages->installEventFilter(this);
 
     mUi->tableViewMessages->setSelectionBehavior(QAbstractItemView::SelectRows);
-    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::TimeColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::LevelNameColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::MessageColumn, QHeaderView::Stretch);
     mUi->tableViewMessages->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     // Initialize log level selection
@@ -163,7 +150,7 @@ bool QsLogging::Window::eventFilter(QObject *obj, QEvent *event)
 
 void QsLogging::Window::OnPauseClicked()
 {
-    mUi->toolButtonPause->setIcon(mIsPaused ? g_resources.pauseIcon : g_resources.playIcon);
+    mUi->toolButtonPause->setIcon(mIsPaused ? pauseIcon() : playIcon());
     mUi->toolButtonPause->setText(mIsPaused ? tr("&Pause") : tr("&Resume"));
 
     mIsPaused = !mIsPaused;
@@ -201,15 +188,17 @@ void QsLogging::Window::ModelRowsInserted(const QModelIndex& parent, int start, 
     Q_UNUSED(parent);
     Q_UNUSED(start);
     Q_UNUSED(last);
-    if (mHasAutoScroll)
+    if (mHasAutoScroll) {
         mUi->tableViewMessages->scrollToBottom();
+    }
 }
 
 void QsLogging::Window::copySelection() const
 {
     const QString text = getSelectionText();
-    if (text.isEmpty())
+    if (text.isEmpty()) {
         return;
+    }
 
     QApplication::clipboard()->setText(text);
 }
@@ -217,8 +206,9 @@ void QsLogging::Window::copySelection() const
 void QsLogging::Window::saveSelection()
 {
     const QString text = getSelectionText();
-    if (text.isEmpty())
+    if (text.isEmpty()) {
         return;
+    }
 
     QFileDialog dialog(this);
     dialog.setWindowTitle(tr("Save log"));
@@ -228,8 +218,9 @@ void QsLogging::Window::saveSelection()
     dialog.exec();
 
     const QStringList sel = dialog.selectedFiles();
-    if (sel.size() < 1)
+    if (sel.size() < 1) {
         return;
+    }
 
     QFile file(sel.at(0));
     if (file.open(QIODevice::WriteOnly)) {

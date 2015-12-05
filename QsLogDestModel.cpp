@@ -116,13 +116,13 @@ QVariant QsLogging::ModelDestination::data(const QModelIndex& index, int role) c
         const LogMessage& item = mLogMessages.at(index.row());
 
         switch (index.column()) {
-        case 0:
+        case TimeColumn:
             return item.time.toLocalTime().toString();
-        case 1:
+        case LevelNameColumn:
             return LocalizedLevelName(item.level);
-        case 2:
+        case MessageColumn:
             return item.message;
-        case 100:
+        case FormattedMessageColumn:
             return item.formatted;
         default:
             return QVariant();
@@ -156,10 +156,14 @@ QVariant QsLogging::ModelDestination::headerData(int section, Qt::Orientation or
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
         switch (section) {
-        case 0: return tr("Time");
-        case 1: return tr("Level");
-        case 2: return tr("Message");
-        default: return QVariant();
+            case TimeColumn:
+                return tr("Time");
+            case LevelNameColumn:
+                return tr("Level");
+            case MessageColumn:
+                return tr("Message");
+            default:
+                break;
         }
     }
 

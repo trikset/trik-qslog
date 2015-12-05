@@ -40,9 +40,16 @@ namespace QsLogging
 class QSLOG_SHARED_OBJECT ModelDestination : public QAbstractTableModel, public Destination
 {
     Q_OBJECT
-
 public:
     static const char* const Type;
+
+    enum Column
+    {
+        TimeColumn = 0,
+        LevelNameColumn = 1,
+        MessageColumn = 2,
+        FormattedMessageColumn = 100
+    };
 
     explicit ModelDestination(size_t max_items = std::numeric_limits<size_t>::max());
     virtual ~ModelDestination();

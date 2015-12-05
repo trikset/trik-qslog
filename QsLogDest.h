@@ -106,7 +106,7 @@ public:
     // takes a QObject + signal/slot
     static DestinationPtr MakeFunctorDestination(QObject *receiver, const char *member);
 #ifdef QS_LOG_WINDOW
-    static DestinationPtr MakeWindowDestination(size_t max_items = std::numeric_limits<size_t>::max());
+    static DestinationPtr MakeModelDestination(size_t max_items = std::numeric_limits<size_t>::max());
 #endif
 };
 

@@ -34,7 +34,7 @@
 
 namespace QsLogging
 {
-class RotationStrategy
+class QSLOG_SHARED_OBJECT RotationStrategy
 {
 public:
     virtual ~RotationStrategy();
@@ -47,7 +47,7 @@ public:
 };
 
 // Never rotates file, overwrites existing file.
-class NullRotationStrategy : public RotationStrategy
+class QSLOG_SHARED_OBJECT NullRotationStrategy : public RotationStrategy
 {
 public:
     virtual void setInitialInfo(const QFile &) {}
@@ -58,7 +58,7 @@ public:
 };
 
 // Rotates after a size is reached, keeps a number of <= 10 backups, appends to existing file.
-class SizeRotationStrategy : public RotationStrategy
+class QSLOG_SHARED_OBJECT SizeRotationStrategy : public RotationStrategy
 {
 public:
     SizeRotationStrategy();
@@ -90,13 +90,13 @@ private:
 typedef QSharedPointer<RotationStrategy> RotationStrategyPtr;
 
 // file message sink
-class FileDestination : public Destination
+class QSLOG_SHARED_OBJECT FileDestination : public Destination
 {
 public:
     static const char* const Type;
 
     FileDestination(const QString& filePath, RotationStrategyPtr rotationStrategy);
-    virtual void write(const QString& message, Level level);
+    virtual void write(const LogMessage& message);
     virtual bool isValid();
     virtual QString type() const;
 

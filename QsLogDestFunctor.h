@@ -37,7 +37,7 @@ namespace QsLogging
 // called from a different thread or even a different binary. You should not access QsLog from
 // inside LogFunction and should not perform any time-consuming operations.
 // logMessageReady is connected through a queued connection and trace messages are not included
-class FunctorDestination : public QObject, public Destination
+class QSLOG_SHARED_OBJECT FunctorDestination : public QObject, public Destination
 {
     Q_OBJECT
 public:
@@ -46,13 +46,13 @@ public:
     explicit FunctorDestination(LogFunction f);
     FunctorDestination(QObject *receiver, const char *member);
 
-    virtual void write(const QString &message, Level level);
+    virtual void write(const LogMessage& message);
     virtual bool isValid();
     virtual QString type() const;
 
 protected:
     // int used to avoid registering a new enum type
-    Q_SIGNAL void logMessageReady(const QString &message, int level);
+    Q_SIGNAL void logMessageReady(const LogMessage& message);
 
 private:
     LogFunction mLogFunction;

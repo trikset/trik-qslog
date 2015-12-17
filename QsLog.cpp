@@ -49,10 +49,7 @@ static const char WarnString[]  = "WARN ";
 static const char ErrorString[] = "ERROR";
 static const char FatalString[] = "FATAL";
 
-// not using Qt::ISODate because we need the milliseconds too
-static const QString fmtDateTime("yyyy-MM-ddThh:mm:ss.zzz");
-
-static const char* LevelToText(Level theLevel)
+const char* LevelToText(Level theLevel)
 {
     switch (theLevel) {
         case TraceLevel:
@@ -80,12 +77,11 @@ static const char* LevelToText(Level theLevel)
 class LogWriterRunnable : public QRunnable
 {
 public:
-    LogWriterRunnable(QString message, Level level);
+    LogWriterRunnable(const LogMessage& message);
     virtual void run();
 
 private:
-    QString mMessage;
-    Level mLevel;
+    LogMessage mMessage;
 };
 #endif
 
@@ -103,16 +99,15 @@ public:
 };
 
 #ifdef QS_LOG_SEPARATE_THREAD
-LogWriterRunnable::LogWriterRunnable(QString message, Level level)
+LogWriterRunnable::LogWriterRunnable(const LogMessage& message)
     : QRunnable()
     , mMessage(message)
-    , mLevel(level)
 {
 }
 
 void LogWriterRunnable::run()
 {
-    Logger::instance().write(mMessage, mLevel);
+    Logger::instance().write(mMessage);
 }
 #endif
 
@@ -132,6 +127,7 @@ LoggerImpl::LoggerImpl()
 Logger::Logger()
     : d(new LoggerImpl)
 {
+    qRegisterMetaType<LogMessage>("QsLogging::LogMessage");
 }
 
 Logger& Logger::instance()
@@ -216,14 +212,8 @@ Level Logger::loggingLevel() const
 //! creates the complete log message and passes it to the logger
 void Logger::Helper::writeToLog()
 {
-    const char* const levelName = LevelToText(level);
-    const QString completeMessage(QString("%1 %2 %3")
-                                  .arg(levelName)
-                                  .arg(QDateTime::currentDateTime().toString(fmtDateTime))
-                                  .arg(buffer)
-                                  );
-
-    Logger::instance().enqueueWrite(completeMessage, level);
+    const LogMessage msg(buffer, QDateTime::currentDateTimeUtc(), level);
+    Logger::instance().enqueueWrite(msg);
 }
 
 Logger::Helper::~Helper()
@@ -239,24 +229,24 @@ Logger::Helper::~Helper()
 }
 
 //! directs the message to the task queue or writes it directly
-void Logger::enqueueWrite(const QString& message, Level level)
+void Logger::enqueueWrite(const LogMessage& message)
 {
 #ifdef QS_LOG_SEPARATE_THREAD
-    LogWriterRunnable *r = new LogWriterRunnable(message, level);
+    LogWriterRunnable *r = new LogWriterRunnable(message);
     d->threadPool.start(r);
 #else
-    write(message, level);
+    write(message);
 #endif
 }
 
 //! Sends the message to all the destinations. The level for this message is passed in case
 //! it's useful for processing in the destination.
-void Logger::write(const QString& message, Level level)
+void Logger::write(const LogMessage& message)
 {
     QMutexLocker lock(&d->logMutex);
     for (DestinationList::iterator it = d->destList.begin(),
         endIt = d->destList.end();it != endIt;++it) {
-        (*it)->write(message, level);
+        (*it)->write(message);
     }
 }
 

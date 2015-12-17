@@ -27,6 +27,7 @@
 #define QSLOGDEST_H
 
 #include "QsLogLevel.h"
+#include "QsLogMessage.h"
 #include <QSharedPointer>
 #include <QtGlobal>
 class QString;
@@ -46,11 +47,11 @@ namespace QsLogging
 class QSLOG_SHARED_OBJECT Destination
 {
 public:
-    typedef void (*LogFunction)(const QString &message, Level level);
+    typedef void (*LogFunction)(const LogMessage& message);
 
 public:
     virtual ~Destination();
-    virtual void write(const QString& message, Level level) = 0;
+    virtual void write(const LogMessage& message) = 0;
     //!
     //! \brief isValid
     //! \return whether the destination was created correctly

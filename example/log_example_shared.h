@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Razvan Petru
+﻿// Copyright (c) 2013, Razvan Petru
 // All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without modification,
@@ -29,9 +29,9 @@
 #include <QtGlobal>
 
 #ifdef EXAMPLE_IS_SHARED_LIBRARY
-#define EXAMPLE_SHARED_OBJECT Q_DECL_IMPORT
-#else
 #define EXAMPLE_SHARED_OBJECT Q_DECL_EXPORT
+#else
+#define EXAMPLE_SHARED_OBJECT Q_DECL_IMPORT
 #endif
 
 class EXAMPLE_SHARED_OBJECT LogExampleShared
@@ -41,8 +41,8 @@ public:
 };
 
 extern "C" {
-    LogExampleShared *createExample();
-    void destroyExample(LogExampleShared *example);
+    EXAMPLE_SHARED_OBJECT LogExampleShared * createExample();
+    EXAMPLE_SHARED_OBJECT void destroyExample(LogExampleShared *example);
 }
 
 #endif // LOGEXAMPLESHARED_H

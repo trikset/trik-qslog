@@ -30,6 +30,7 @@
 #include "QsLogMessage.h"
 #include <QSharedPointer>
 #include <QtGlobal>
+#include <limits>
 class QString;
 class QObject;
 
@@ -104,6 +105,9 @@ public:
     static DestinationPtr MakeFunctorDestination(Destination::LogFunction f);
     // takes a QObject + signal/slot
     static DestinationPtr MakeFunctorDestination(QObject *receiver, const char *member);
+#ifdef QS_LOG_WINDOW
+    static DestinationPtr MakeModelDestination(size_t max_items = std::numeric_limits<size_t>::max());
+#endif
 };
 
 } // end namespace

@@ -1,6 +1,4 @@
 # This pro file will build QsLog as a shared library
-include(QsLog.pri)
-
 TARGET = QsLog
 VERSION = "2.1.0"
 QT -= gui
@@ -13,11 +11,17 @@ QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
 !isEmpty(QSLOG_DESTDIR) {
     message(Will use $${QSLOG_DESTDIR} as destdir.)
     DESTDIR = $${QSLOG_DESTDIR}/bin
+    OBJECTS_DIR = $${QSLOG_DESTDIR}
+    MOC_DIR = $${QSLOG_DESTDIR}
+    UI_DIR  = $${QSLOG_DESTDIR}
+    RCC_DIR = $${QSLOG_DESTDIR}
 }
 
 win32 {
     DEFINES += QSLOG_IS_SHARED_LIBRARY
 }
+
+include(QsLog.pri)
 
 unix:!macx {
     DISTRO = $$system(uname -a)

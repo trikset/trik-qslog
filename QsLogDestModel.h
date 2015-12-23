@@ -23,24 +23,58 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "QsLogMessage.h"
-#include "QsLogLevel.h"
+#ifndef QSLOGDESTMODEL_H
+#define QSLOGDESTMODEL_H
+
+#include "QsLogDest.h"
+
+#include <QAbstractTableModel>
+#include <QReadWriteLock>
+
+#include <limits>
+#include <deque>
 
 namespace QsLogging
 {
 
-// not using Qt::ISODate because we need the milliseconds too
-static const char DateTimePattern[] = "yyyy-MM-ddThh:mm:ss.zzz";
-
-LogMessage::LogMessage(const QString& m, const QDateTime& t, const Level l)
-    : message(m)
-    , time(t)
-    , level(l)
-    , formatted(QString("%1 %2 %3").arg(LevelName(level))
-        .arg(t.toLocalTime().toString(DateTimePattern))
-        .arg(message))
+class QSLOG_SHARED_OBJECT ModelDestination : public QAbstractTableModel, public Destination
 {
+    Q_OBJECT
+public:
+    static const char* const Type;
+
+    enum Column
+    {
+        TimeColumn = 0,
+        LevelNameColumn = 1,
+        MessageColumn = 2,
+        FormattedMessageColumn = 100
+    };
+
+    explicit ModelDestination(size_t max_items = std::numeric_limits<size_t>::max());
+    virtual ~ModelDestination();
+
+    void addEntry(const LogMessage& message);
+    void clear();
+    LogMessage at(size_t index);
+
+    // Destination overrides
+    virtual void write(const LogMessage& message);
+    virtual bool isValid();
+    virtual QString type() const;
+
+    // QAbstractTableModel overrides
+    virtual int columnCount(const QModelIndex& parent = QModelIndex()) const;
+    virtual int rowCount(const QModelIndex& parent = QModelIndex()) const;
+    virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+
+private:
+    std::deque<LogMessage> mLogMessages;
+    mutable QReadWriteLock mMessagesLock;
+    size_t mMaxItems;
+};
 
 }
 
-}
+#endif // QSLOGDESTMODEL_H

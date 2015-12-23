@@ -1,5 +1,5 @@
 # CMake build support courtesy of Axel Gembe <axel@gembe.net>
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 2.8)
 
 project(QsLog)
 
@@ -44,6 +44,7 @@ set(SOURCE_FILES
 	QsLogDestFile.cpp
 	QsLogDestFunctor.cpp
 	QsLogMessage.cpp
+	QsLogLevel.cpp
     )
 
 if(APPLE)
@@ -82,9 +83,22 @@ else(QS_LOG_IS_SHARED_LIBRARY)
 	set(QS_LOG_LIBRARY_TYPE STATIC)
 endif(QS_LOG_IS_SHARED_LIBRARY)
 
-add_library(QsLog ${QS_LOG_LIBRARY_TYPE} ${HEADER_FILES} ${SOURCE_FILES})
+option(QS_LOG_BUILD_WINDOW "Build log window, depends on Qt5::Widgets" OFF)
+if(QS_LOG_BUILD_WINDOW)
+	find_package(Qt5Widgets REQUIRED)
+	list(APPEND ADDITIONAL_LIBRARIES Qt5::Widgets)
+	list(APPEND HEADER_FILES QsLogDestModel.h QsLogWindow.h)
+	list(APPEND SOURCE_FILES QsLogDestModel.cpp QsLogWindow.cpp)
+	list(APPEND UI_FILES QsLogWindow.ui)
+	list(APPEND RES_FILES QsLogWindow.qrc)
+	qt5_wrap_ui(UI_SOURCE_FILES ${UI_FILES})
+	qt5_add_resources(RES_SOURCE_FILES ${RES_FILES})
+    add_definitions(-DQS_LOG_WINDOW)
+endif()
 
-target_link_libraries(QsLog Qt5::Core)
+add_library(QsLog ${QS_LOG_LIBRARY_TYPE} ${HEADER_FILES} ${SOURCE_FILES} ${UI_SOURCE_FILES} ${RES_SOURCE_FILES})
+
+target_link_libraries(QsLog Qt5::Core ${ADDITIONAL_LIBRARIES})
 
 install(FILES ${HEADER_FILES} DESTINATION include/QsLog)
 QsLog_install_target(QsLog "")

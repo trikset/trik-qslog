@@ -36,6 +36,7 @@
 
 namespace QsLogging
 {
+
 class Destination;
 class LoggerImpl; // d pointer
 

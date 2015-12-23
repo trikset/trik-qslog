@@ -23,24 +23,55 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "QsLogMessage.h"
-#include "QsLogLevel.h"
+#ifndef QSLOGWINDOW_H
+#define QSLOGWINDOW_H
+
+#include "QsLogDest.h"
+#include <QDialog>
+#include <QSharedPointer>
+class QModelIndex;
+
+namespace Ui {
+class LogWindow;
+}
 
 namespace QsLogging
 {
 
-// not using Qt::ISODate because we need the milliseconds too
-static const char DateTimePattern[] = "yyyy-MM-ddThh:mm:ss.zzz";
+class WindowLogFilterProxyModel;
+class ModelDestination;
 
-LogMessage::LogMessage(const QString& m, const QDateTime& t, const Level l)
-    : message(m)
-    , time(t)
-    , level(l)
-    , formatted(QString("%1 %2 %3").arg(LevelName(level))
-        .arg(t.toLocalTime().toString(DateTimePattern))
-        .arg(message))
+class QSLOG_SHARED_OBJECT Window : public QDialog
 {
+    Q_OBJECT
+
+public:
+    explicit Window(DestinationPtr destination, QWidget* parent = 0);
+    virtual ~Window();
+
+    virtual bool eventFilter(QObject* obj, QEvent* event);
+
+private slots:
+    void OnPauseClicked();
+    void OnSaveClicked();
+    void OnClearClicked();
+    void OnCopyClicked();
+    void OnLevelChanged(int value);
+    void OnAutoScrollChanged(bool checked);
+    void ModelRowsInserted(const QModelIndex& parent, int start, int last);
+
+private:
+    void copySelection() const;
+    void saveSelection();
+    QString getSelectionText() const;
+
+    QSharedPointer<ModelDestination> mModelDestination;
+    Ui::LogWindow* mUi;
+    WindowLogFilterProxyModel* mProxyModel;
+    bool mIsPaused;
+    bool mHasAutoScroll;
+};
 
 }
 
-}
+#endif // QSLOGWINDOW_H

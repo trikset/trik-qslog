@@ -27,6 +27,9 @@
 #include "QsLogDestConsole.h"
 #include "QsLogDestFile.h"
 #include "QsLogDestFunctor.h"
+#ifdef QS_LOG_WINDOW
+#include "QsLogDestModel.h"
+#endif
 #include <QString>
 
 namespace QsLogging
@@ -66,5 +69,12 @@ DestinationPtr DestinationFactory::MakeFunctorDestination(QObject *receiver, con
 {
     return DestinationPtr(new FunctorDestination(receiver, member));
 }
+
+#ifdef QS_LOG_WINDOW
+DestinationPtr DestinationFactory::MakeModelDestination(size_t max_items)
+{
+    return DestinationPtr(new ModelDestination(max_items));
+}
+#endif
 
 } // end namespace

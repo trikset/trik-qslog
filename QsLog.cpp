@@ -26,8 +26,9 @@
 #include "QsLog.h"
 #include "QsLogDest.h"
 #ifdef QS_LOG_SEPARATE_THREAD
-#include <QThreadPool>
-#include <QRunnable>
+#include <QThread>
+#include <QWaitCondition>
+#include <queue>
 #endif
 #include <QMutex>
 #include <QVector>
@@ -43,14 +44,48 @@ namespace QsLogging
 typedef QVector<DestinationPtr> DestinationList;
 
 #ifdef QS_LOG_SEPARATE_THREAD
-class LogWriterRunnable : public QRunnable
+//! Messages can be enqueued from other threads and will be logged one by one.
+//! Note: std::queue was used instead of QQueue because it accepts types missing op=.
+class LoggerThread : public QThread
 {
 public:
-    LogWriterRunnable(const LogMessage& message);
-    virtual void run();
+    void enqueue(const LogMessage& message)
+    {
+        QMutexLocker locker(&mutex);
+        messageQueue.push(message);
+        waitCondition.wakeOne();
+    }
+
+    void requestStop()
+    {
+        QMutexLocker locker(&mutex);
+        requestInterruption();
+        waitCondition.wakeOne();
+    }
+
+protected:
+    virtual void run()
+    {
+        while (true) {
+            QMutexLocker locker(&mutex);
+            if (messageQueue.empty() && !isInterruptionRequested()) {
+                waitCondition.wait(&mutex);
+            }
+            if (isInterruptionRequested()) {
+                break;
+            }
+
+            const LogMessage msg = messageQueue.front();
+            messageQueue.pop();
+            locker.unlock();
+            Logger::instance().write(msg);
+        }
+    }
 
 private:
-    LogMessage mMessage;
+    QMutex mutex;
+    QWaitCondition waitCondition;
+    std::queue<LogMessage> messageQueue;
 };
 #endif
 
@@ -58,28 +93,15 @@ class LoggerImpl
 {
 public:
     LoggerImpl();
+    ~LoggerImpl();
 
 #ifdef QS_LOG_SEPARATE_THREAD
-    QThreadPool threadPool;
+    LoggerThread loggerThread;
 #endif
     QMutex logMutex;
     Level level;
     DestinationList destList;
 };
-
-#ifdef QS_LOG_SEPARATE_THREAD
-LogWriterRunnable::LogWriterRunnable(const LogMessage& message)
-    : QRunnable()
-    , mMessage(message)
-{
-}
-
-void LogWriterRunnable::run()
-{
-    Logger::instance().write(mMessage);
-}
-#endif
-
 
 LoggerImpl::LoggerImpl()
     : level(InfoLevel)
@@ -87,8 +109,15 @@ LoggerImpl::LoggerImpl()
     // assume at least file + console
     destList.reserve(2);
 #ifdef QS_LOG_SEPARATE_THREAD
-    threadPool.setMaxThreadCount(1);
-    threadPool.setExpiryTimeout(-1);
+    loggerThread.start(QThread::LowPriority);
+#endif
+}
+
+LoggerImpl::~LoggerImpl()
+{
+#ifdef QS_LOG_SEPARATE_THREAD
+    loggerThread.requestStop();
+    loggerThread.wait();
 #endif
 }
 
@@ -134,9 +163,6 @@ Level Logger::levelFromLogMessage(const QString& logMessage, bool* conversionSuc
 
 Logger::~Logger()
 {
-#ifdef QS_LOG_SEPARATE_THREAD
-    d->threadPool.waitForDone();
-#endif
     delete d;
     d = 0;
 }
@@ -180,17 +206,11 @@ Level Logger::loggingLevel() const
     return d->level;
 }
 
-//! creates the complete log message and passes it to the logger
-void Logger::Helper::writeToLog()
-{
-    const LogMessage msg(buffer, QDateTime::currentDateTimeUtc(), level);
-    Logger::instance().enqueueWrite(msg);
-}
-
 Logger::Helper::~Helper()
 {
     try {
-        writeToLog();
+        const LogMessage msg(buffer, QDateTime::currentDateTimeUtc(), level);
+        Logger::instance().enqueueWrite(msg);
     }
     catch(std::exception&) {
         // you shouldn't throw exceptions from a sink
@@ -203,8 +223,7 @@ Logger::Helper::~Helper()
 void Logger::enqueueWrite(const LogMessage& message)
 {
 #ifdef QS_LOG_SEPARATE_THREAD
-    LogWriterRunnable *r = new LogWriterRunnable(message);
-    d->threadPool.start(r);
+    d->loggerThread.enqueue(message);
 #else
     write(message);
 #endif

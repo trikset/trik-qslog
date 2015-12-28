@@ -71,8 +71,6 @@ public:
         QDebug& stream(){ return qtDebug; }
 
     private:
-        void writeToLog();
-
         Level level;
         QString buffer;
         QDebug qtDebug;
@@ -88,7 +86,7 @@ private:
 
     LoggerImpl* d;
 
-    friend class LogWriterRunnable;
+    friend class LoggerThread;
 };
 
 } // end namespace

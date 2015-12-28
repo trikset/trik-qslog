@@ -18,7 +18,7 @@ QSLOG_DESTDIR=$$(QSLOG_DESTDIR)
     error(Please set the QSLOG_DESTDIR environment variable)
 }
 
-LIBS += -L${QSLOG_DESTDIR}/bin
+LIBS += -L$${QSLOG_DESTDIR}/bin
 win32 {
     LIBS += -lQsLog2
 } else {

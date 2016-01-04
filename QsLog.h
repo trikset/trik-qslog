@@ -48,14 +48,28 @@ public:
 
     ~Logger();
 
+#if defined(Q_OS_WIN)
+    //! When QS_LOG_SEPARATE_THREAD is defined on Windows, and you are using this library as a DLL,
+    //! this function must be called before your program ends, to ensure a clean shutdown of the logger thread.
+    //! Failing to call it will result in an assert being triggered, an error message being printed
+    //! out and most probably a deadlock.
+    //! Returns the wait result for the thread. When called on a non-threaded logger returns true
+    //! immediately.
+    bool shutDownLoggerThread();
+#endif
+
     //! Adds a log message destination. Don't add null destinations.
     void addDestination(DestinationPtr destination);
+
     //! Removes a previously added destination. Does nothing if destination was not previously added.
     void removeDestination(const DestinationPtr& destination);
+
     //! Checks if a destination of a specific type has been added. Pass T::Type as parameter.
     bool hasDestinationOfType(const char* type) const;
+
     //! Logging at a level < 'newLevel' will be ignored
     void setLoggingLevel(Level newLevel);
+
     //! The default level is INFO
     Level loggingLevel() const;
 

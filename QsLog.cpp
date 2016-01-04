@@ -89,6 +89,7 @@ private:
 };
 #endif
 
+
 class LoggerImpl
 {
 public:
@@ -96,6 +97,8 @@ public:
     ~LoggerImpl();
 
 #ifdef QS_LOG_SEPARATE_THREAD
+    bool shutDownLoggerThread();
+
     LoggerThread loggerThread;
 #endif
     QMutex logMutex;
@@ -116,10 +119,32 @@ LoggerImpl::LoggerImpl()
 LoggerImpl::~LoggerImpl()
 {
 #ifdef QS_LOG_SEPARATE_THREAD
-    loggerThread.requestStop();
-    loggerThread.wait();
+#if defined(Q_OS_WIN) && defined(QSLOG_IS_SHARED_LIBRARY)
+    // Waiting on the thread here is too late and can lead to deadlocks. More details:
+    // * Another reason not to do anything scary in your DllMain:
+    //   https://blogs.msdn.microsoft.com/oldnewthing/20040128-00/?p=40853
+    // * Dynamic Link libraries best practices:
+    //   https://msdn.microsoft.com/en-us/library/windows/desktop/dn633971%28v=vs.85%29.aspx#general_best_practices
+    assert(loggerThread.isFinished());
+    if (!loggerThread.isFinished()) {
+        qCritical("You must shut down the QsLog thread, otherwise deadlocks can occur!");
+    }
+#endif
+    shutDownLoggerThread();
 #endif
 }
+
+#ifdef QS_LOG_SEPARATE_THREAD
+bool LoggerImpl::shutDownLoggerThread()
+{
+    if (loggerThread.isFinished()) {
+        return true;
+    }
+
+    loggerThread.requestStop();
+    return loggerThread.wait();
+}
+#endif
 
 
 Logger::Logger()
@@ -166,6 +191,17 @@ Logger::~Logger()
     delete d;
     d = 0;
 }
+
+#if defined(Q_OS_WIN)
+bool Logger::shutDownLoggerThread()
+{
+#ifdef QS_LOG_SEPARATE_THREAD
+    return d->shutDownLoggerThread();
+#else
+    return true;
+#endif
+}
+#endif
 
 void Logger::addDestination(DestinationPtr destination)
 {

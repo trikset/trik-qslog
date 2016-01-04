@@ -28,7 +28,7 @@ const char* QsLogging::LevelName(QsLogging::Level theLevel)
         case QsLogging::OffLevel:
             return "";
         default: {
-            assert(!"bad log level");
+            Q_ASSERT(!"bad log level");
             return InfoString;
         }
     }

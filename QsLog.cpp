@@ -35,7 +35,6 @@
 #include <QDateTime>
 #include <QLatin1String>
 #include <QtGlobal>
-#include <cassert>
 #include <cstdlib>
 #include <stdexcept>
 
@@ -125,7 +124,7 @@ LoggerImpl::~LoggerImpl()
     //   https://blogs.msdn.microsoft.com/oldnewthing/20040128-00/?p=40853
     // * Dynamic Link libraries best practices:
     //   https://msdn.microsoft.com/en-us/library/windows/desktop/dn633971%28v=vs.85%29.aspx#general_best_practices
-    assert(loggerThread.isFinished());
+    Q_ASSERT(loggerThread.isFinished());
     if (!loggerThread.isFinished()) {
         qCritical("You must shut down the QsLog thread, otherwise deadlocks can occur!");
     }
@@ -205,7 +204,7 @@ bool Logger::shutDownLoggerThread()
 
 void Logger::addDestination(DestinationPtr destination)
 {
-    assert(destination.data());
+    Q_ASSERT(destination.data());
     QMutexLocker lock(&d->logMutex);
     d->destList.push_back(destination);
 }
@@ -250,7 +249,7 @@ Logger::Helper::~Helper()
     }
     catch(std::exception&) {
         // you shouldn't throw exceptions from a sink
-        assert(!"exception in logger helper destructor");
+        Q_ASSERT(!"exception in logger helper destructor");
         throw;
     }
 }

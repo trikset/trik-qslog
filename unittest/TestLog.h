@@ -21,7 +21,12 @@ public:
     };
 
 public:
-    virtual void write(const QsLogging::LogMessage& message)
+    explicit MockDestination(const QLatin1String& myType = QLatin1String("mock"))
+        : mMyType(myType)
+    {
+    }
+
+    void write(const QsLogging::LogMessage& message) override
     {
         Message m;
         m.text = message.formatted;
@@ -30,14 +35,14 @@ public:
         ++mCountByLevel[message.level];
     }
 
-    virtual bool isValid()
+    bool isValid() override
     {
         return true;
     }
 
-    virtual QString type() const
+    QString type() const override
     {
-        return QString::fromLatin1("mock");
+        return mMyType;
     }
 
     void clear()
@@ -75,6 +80,7 @@ public:
 private:
     QHash<QsLogging::Level,int> mCountByLevel;
     QList<Message> mMessages;
+    QLatin1String mMyType;
 };
 
 // A rotation strategy that simulates file rotations.
@@ -94,13 +100,13 @@ public:
         return files;
     }
 
-    virtual void rotate() {
+    void rotate() override {
         SizeRotationStrategy::rotate();
         files.append(logName);
     }
 
 protected:
-    virtual bool removeFileAtPath(const QString& path) {
+    bool removeFileAtPath(const QString& path) override {
         QString editedPath = path;
         if (editedPath.startsWith(fakePath)) {
             editedPath.remove(0, fakePath.size() + 1);
@@ -114,7 +120,7 @@ protected:
         return false;
     }
 
-    virtual bool fileExistsAtPath(const QString& path) {
+    bool fileExistsAtPath(const QString& path) override {
         QString editedPath = path;
         if (editedPath.startsWith(fakePath)) {
             editedPath.remove(0, fakePath.size() + 1);
@@ -123,7 +129,7 @@ protected:
         return false;
     }
 
-    virtual bool renameFileFromTo(const QString& from, const QString& to) {
+    bool renameFileFromTo(const QString& from, const QString& to) override {
         QString editedFromPath = from;
         QString editedToPath = to;
 

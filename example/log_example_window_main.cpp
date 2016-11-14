@@ -46,16 +46,19 @@ int main(int argc, char *argv[])
 
     using namespace QsLogging;
 
-    // 1. init the logging mechanism
+    // 1. Create the log window
+    Window w;
+
+    // 2. init the logging mechanism
     Logger& logger = Logger::instance();
     logger.setLoggingLevel(QsLogging::TraceLevel);
 
-    // 2. add model destination
-    DestinationPtr modelDestination(DestinationFactory::MakeModelDestination());
-    logger.addDestination(modelDestination);
+    // 3. add functor destination, connect it to window
+    DestinationPtrU functorDestination(
+                DestinationFactory::MakeFunctorDestination(&w, SLOT(addLogMessage(QsLogging::LogMessage))));
+    logger.addDestination(std::move(functorDestination));
 
     LogTimer timer;
-    Window w(modelDestination);
     w.show();
 
     QLOG_DEBUG() << "window was created";

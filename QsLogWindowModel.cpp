@@ -23,38 +23,19 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "QsLogDestModel.h"
+#include "QsLogWindowModel.h"
 #include "QsLog.h"
 
 #include <QColor>
 
-const char* const QsLogging::ModelDestination::Type = "window";
-
-QsLogging::ModelDestination::ModelDestination(size_t max_items) :
+QsLogging::LogWindowModel::LogWindowModel(size_t max_items) :
     mMaxItems(max_items)
 {
 }
 
-QsLogging::ModelDestination::~ModelDestination()
-{
-}
+QsLogging::LogWindowModel::~LogWindowModel() noexcept = default;
 
-void QsLogging::ModelDestination::write(const LogMessage& message)
-{
-    addEntry(message);
-}
-
-bool QsLogging::ModelDestination::isValid()
-{
-    return true;
-}
-
-QString QsLogging::ModelDestination::type() const
-{
-    return QString::fromLatin1(Type);
-}
-
-void QsLogging::ModelDestination::addEntry(const LogMessage& message)
+void QsLogging::LogWindowModel::addEntry(const LogMessage& message)
 {
     const int next_idx = static_cast<int>(mLogMessages.size());
     beginInsertRows(QModelIndex(), next_idx, next_idx);
@@ -76,7 +57,7 @@ void QsLogging::ModelDestination::addEntry(const LogMessage& message)
     }
 }
 
-void QsLogging::ModelDestination::clear()
+void QsLogging::LogWindowModel::clear()
 {
     beginResetModel();
     {
@@ -86,18 +67,18 @@ void QsLogging::ModelDestination::clear()
     endResetModel();
 }
 
-QsLogging::LogMessage QsLogging::ModelDestination::at(size_t index)
+QsLogging::LogMessage QsLogging::LogWindowModel::at(size_t index) const
 {
     return mLogMessages[index];
 }
 
-int QsLogging::ModelDestination::columnCount(const QModelIndex& parent) const
+int QsLogging::LogWindowModel::columnCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent);
     return 3;
 }
 
-int QsLogging::ModelDestination::rowCount(const QModelIndex& parent) const
+int QsLogging::LogWindowModel::rowCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent);
     QReadLocker lock(&mMessagesLock);
@@ -105,7 +86,7 @@ int QsLogging::ModelDestination::rowCount(const QModelIndex& parent) const
     return static_cast<int>(mLogMessages.size());
 }
 
-QVariant QsLogging::ModelDestination::data(const QModelIndex& index, int role) const
+QVariant QsLogging::LogWindowModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid())
         return QVariant();
@@ -152,7 +133,7 @@ QVariant QsLogging::ModelDestination::data(const QModelIndex& index, int role) c
     return QVariant();
 }
 
-QVariant QsLogging::ModelDestination::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant QsLogging::LogWindowModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
         switch (section) {

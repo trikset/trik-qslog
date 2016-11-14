@@ -26,32 +26,34 @@
 #ifndef QSLOGWINDOW_H
 #define QSLOGWINDOW_H
 
-#include "QsLogDest.h"
+#include "QsLogWindowModel.h"
 #include <QDialog>
-#include <QSharedPointer>
+#include <memory>
 class QModelIndex;
 
 namespace Ui {
 class LogWindow;
+class LogMessage;
 }
 
 namespace QsLogging
 {
 
 class WindowLogFilterProxyModel;
-class ModelDestination;
 
 class QSLOG_SHARED_OBJECT Window : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit Window(DestinationPtr destination, QWidget* parent = 0);
-    virtual ~Window();
+    explicit Window(QWidget* parent = nullptr);
+    virtual ~Window() noexcept;
 
     virtual bool eventFilter(QObject* obj, QEvent* event);
 
 private slots:
+    void addLogMessage(const QsLogging::LogMessage& m);
+
     void OnPauseClicked();
     void OnSaveClicked();
     void OnClearClicked();
@@ -65,9 +67,9 @@ private:
     void saveSelection();
     QString getSelectionText() const;
 
-    QSharedPointer<ModelDestination> mModelDestination;
-    Ui::LogWindow* mUi;
-    WindowLogFilterProxyModel* mProxyModel;
+    LogWindowModel mModel;
+    std::unique_ptr<Ui::LogWindow> mUi;
+    std::unique_ptr<WindowLogFilterProxyModel> mProxyModel;
     bool mIsPaused;
     bool mHasAutoScroll;
 };

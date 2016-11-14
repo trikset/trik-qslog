@@ -24,8 +24,9 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "QsLogWindow.h"
-#include "QsLogDestModel.h"
+#include "QsLogWindowModel.h"
 #include "QsLog.h"
+#include "QsLogMessage.h"
 #include "ui_QsLogWindow.h"
 
 #include <QIcon>
@@ -85,7 +86,7 @@ protected:
     {
         Q_UNUSED(source_parent);
         if (!mLastVisibleRow) {
-            ModelDestination* model = dynamic_cast<ModelDestination*>(sourceModel());
+            LogWindowModel* model = dynamic_cast<LogWindowModel*>(sourceModel());
             const LogMessage& d = model->at(source_row);
             return d.level >= mLevel;
         }
@@ -98,17 +99,14 @@ private:
     int mLastVisibleRow;
 };
 
-QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent)
+QsLogging::Window::Window(QWidget* parent)
     : QDialog(parent)
-    , mUi(NULL)
-    , mProxyModel(NULL)
+    , mUi(nullptr)
+    , mProxyModel(nullptr)
     , mIsPaused(false)
     , mHasAutoScroll(true)
 {
-    mModelDestination = destination.dynamicCast<ModelDestination>();
-    Q_ASSERT_X(destination.data(), "Window", "log window needs a destination of type ModelDestination");
-
-    mUi = new Ui::LogWindow();
+    mUi.reset(new Ui::LogWindow());
     mUi->setupUi(this);
 
     connect(mUi->toolButtonPause, SIGNAL(clicked()), SLOT(OnPauseClicked()));
@@ -117,25 +115,26 @@ QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent
     connect(mUi->toolButtonCopy, SIGNAL(clicked()), SLOT(OnCopyClicked()));
     connect(mUi->comboBoxLevel, SIGNAL(currentIndexChanged(int)), SLOT(OnLevelChanged(int)));
     connect(mUi->checkBoxAutoScroll, SIGNAL(toggled(bool)), SLOT(OnAutoScrollChanged(bool)));
-    connect(mModelDestination.data(), SIGNAL(rowsInserted(const QModelIndex&, int, int)), SLOT(ModelRowsInserted(const QModelIndex&, int, int)));
+    connect(&mModel, SIGNAL(rowsInserted(const QModelIndex&, int, int)),
+            SLOT(ModelRowsInserted(const QModelIndex&, int, int)));
 
     // Install the sort / filter model
-    mProxyModel = new WindowLogFilterProxyModel(InfoLevel, this);
-    mProxyModel->setSourceModel(mModelDestination.data());
-    mUi->tableViewMessages->setModel(mProxyModel);
+    mProxyModel.reset(new WindowLogFilterProxyModel(InfoLevel, this));
+    mProxyModel->setSourceModel(&mModel);
+    mUi->tableViewMessages->setModel(mProxyModel.get());
 
     mUi->tableViewMessages->installEventFilter(this);
 
     mUi->tableViewMessages->setSelectionBehavior(QAbstractItemView::SelectRows);
 #if QT_VERSION >= 0x050000
-    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::TimeColumn, QHeaderView::ResizeToContents);
-    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::LevelNameColumn, QHeaderView::ResizeToContents);
-    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(ModelDestination::MessageColumn, QHeaderView::Stretch);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(LogWindowModel::TimeColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(LogWindowModel::LevelNameColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setSectionResizeMode(LogWindowModel::MessageColumn, QHeaderView::Stretch);
     mUi->tableViewMessages->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 #else
-    mUi->tableViewMessages->horizontalHeader()->setResizeMode(ModelDestination::TimeColumn, QHeaderView::ResizeToContents);
-    mUi->tableViewMessages->horizontalHeader()->setResizeMode(ModelDestination::LevelNameColumn, QHeaderView::ResizeToContents);
-    mUi->tableViewMessages->horizontalHeader()->setResizeMode(ModelDestination::MessageColumn, QHeaderView::Stretch);
+    mUi->tableViewMessages->horizontalHeader()->setResizeMode(LogWindowModel::TimeColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setResizeMode(LogWindowModel::LevelNameColumn, QHeaderView::ResizeToContents);
+    mUi->tableViewMessages->horizontalHeader()->setResizeMode(LogWindowModel::MessageColumn, QHeaderView::Stretch);
     mUi->tableViewMessages->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
 #endif
 
@@ -147,10 +146,7 @@ QsLogging::Window::Window(QsLogging::DestinationPtr destination, QWidget* parent
     mUi->comboBoxLevel->setCurrentIndex(InfoLevel);
 }
 
-QsLogging::Window::~Window()
-{
-    delete mUi;
-}
+QsLogging::Window::~Window() noexcept = default;
 
 bool QsLogging::Window::eventFilter(QObject *obj, QEvent *event)
 {
@@ -167,6 +163,11 @@ bool QsLogging::Window::eventFilter(QObject *obj, QEvent *event)
     } else {
         return QDialog::eventFilter(obj, event);
     }
+}
+
+void QsLogging::Window::addLogMessage(const QsLogging::LogMessage &m)
+{
+    mModel.addEntry(m);
 }
 
 void QsLogging::Window::OnPauseClicked()
@@ -186,7 +187,7 @@ void QsLogging::Window::OnSaveClicked()
 
 void QsLogging::Window::OnClearClicked()
 {
-    mModelDestination->clear();
+    mModel.clear();
 }
 
 void QsLogging::Window::OnCopyClicked()
@@ -209,7 +210,7 @@ void QsLogging::Window::ModelRowsInserted(const QModelIndex& parent, int start, 
     Q_UNUSED(parent);
     Q_UNUSED(start);
     Q_UNUSED(last);
-    if (mHasAutoScroll) {
+    if (mHasAutoScroll && !mIsPaused) {
         mUi->tableViewMessages->scrollToBottom();
     }
 }
@@ -261,12 +262,12 @@ QString QsLogging::Window::getSelectionText() const
     if (rows.count() == 0) {
         for (int i = 0; i < mProxyModel->rowCount(); i++) {
             const int srow = mProxyModel->mapToSource(mProxyModel->index(i, 0)).row();
-            text += mModelDestination->at(srow).formatted + "\n";
+            text += mModel.at(srow).formatted + "\n";
         }
     } else {
         for (QModelIndexList::const_iterator i = rows.begin();i != rows.end();++i) {
             const int srow = mProxyModel->mapToSource(*i).row();
-            text += mModelDestination->at(srow).formatted + "\n";
+            text += mModel.at(srow).formatted + "\n";
         }
     }
 

@@ -51,13 +51,13 @@ int main(int argc, char *argv[])
    const QString sLogPath(QDir(a.applicationDirPath()).filePath("log.txt"));
 
    // 2. add two destinations
-   DestinationPtr fileDestination(DestinationFactory::MakeFileDestination(
-     sLogPath, EnableLogRotation, MaxSizeBytes(512), MaxOldLogCount(2)));
-   DestinationPtr debugDestination(DestinationFactory::MakeDebugOutputDestination());
-   DestinationPtr functorDestination(DestinationFactory::MakeFunctorDestination(&logFunction));
-   logger.addDestination(debugDestination);
-   logger.addDestination(fileDestination);
-   logger.addDestination(functorDestination);
+   DestinationPtrU fileDestination(DestinationFactory::MakeFileDestination(
+     sLogPath, LogRotationOption::EnableLogRotation, MaxSizeBytes(512), MaxOldLogCount(2)));
+   DestinationPtrU debugDestination(DestinationFactory::MakeDebugOutputDestination());
+   DestinationPtrU functorDestination(DestinationFactory::MakeFunctorDestination(&logFunction));
+   logger.addDestination(std::move(debugDestination));
+   logger.addDestination(std::move(fileDestination));
+   logger.addDestination(std::move(functorDestination));
 
    // 3. start logging
    QLOG_INFO() << "Program started";

@@ -10,19 +10,30 @@
 #include <QSharedPointer>
 #include <QtGlobal>
 
-void DummyLogFunction(const QsLogging::LogMessage&)
-{
+const QLatin1String destinationName1("mock1");
+const QLatin1String destinationName2("mock2");
+using MockDestinationPtrU = std::unique_ptr<MockDestination>;
 
+// Needed to convert from removeDestination return value to the type that we initially added.
+MockDestinationPtrU unique_cast(QsLogging::DestinationPtrU&& d)
+{
+    MockDestinationPtrU md(dynamic_cast<MockDestination*>(d.release()));
+    Q_ASSERT(md.get());
+    return md;
 }
 
-// Autotests for QsLog
+void DummyLogFunction(const QsLogging::LogMessage&)
+{
+}
+
+// Autotests for QsLog.
+// These tests are based on using a mock destination to check what was logged. Destinations are
+// owned by the log, that's why the add/remove ping-pong is needed in the tests.
 class TestLog : public QObject
 {
     Q_OBJECT
 public:
     TestLog()
-        : mockDest1(new MockDestination)
-        , mockDest2(new MockDestination)
     {
     }
 
@@ -40,8 +51,6 @@ private slots:
     void testDestinationType();
 
 private:
-    QSharedPointer<MockDestination> mockDest1;
-    QSharedPointer<MockDestination> mockDest2;
 };
 
 void TestLog::initTestCase()
@@ -50,14 +59,13 @@ void TestLog::initTestCase()
     QCOMPARE(Logger::instance().loggingLevel(), InfoLevel);
     Logger::instance().setLoggingLevel(TraceLevel);
     QCOMPARE(Logger::instance().loggingLevel(), TraceLevel);
-    Logger::instance().addDestination(mockDest1);
-    Logger::instance().addDestination(mockDest2);
 }
 
 void TestLog::testAllLevels()
 {
-    mockDest1->clear();
-    mockDest2->clear();
+    using namespace QsLogging;
+    MockDestinationPtrU mockDest(new MockDestination(destinationName1));
+    Logger::instance().addDestination(std::move(mockDest));
 
     QLOG_TRACE() << "trace level";
     QLOG_DEBUG() << "debug level";
@@ -66,34 +74,40 @@ void TestLog::testAllLevels()
     QLOG_ERROR() << "error level";
     QLOG_FATAL() << "fatal level";
 
-    using namespace QsLogging;
-    QCOMPARE(mockDest1->messageCount(), 6);
-    QCOMPARE(mockDest1->messageCountForLevel(TraceLevel), 1);
-    QCOMPARE(mockDest1->messageCountForLevel(DebugLevel), 1);
-    QCOMPARE(mockDest1->messageCountForLevel(InfoLevel), 1);
-    QCOMPARE(mockDest1->messageCountForLevel(WarnLevel), 1);
-    QCOMPARE(mockDest1->messageCountForLevel(ErrorLevel), 1);
-    QCOMPARE(mockDest1->messageCountForLevel(FatalLevel), 1);
+    mockDest = unique_cast(Logger::instance().removeDestination(destinationName1));
+    QCOMPARE(mockDest->messageCount(), 6);
+    QCOMPARE(mockDest->messageCountForLevel(TraceLevel), 1);
+    QCOMPARE(mockDest->messageCountForLevel(DebugLevel), 1);
+    QCOMPARE(mockDest->messageCountForLevel(InfoLevel), 1);
+    QCOMPARE(mockDest->messageCountForLevel(WarnLevel), 1);
+    QCOMPARE(mockDest->messageCountForLevel(ErrorLevel), 1);
+    QCOMPARE(mockDest->messageCountForLevel(FatalLevel), 1);
 }
 
 void TestLog::testMessageText()
 {
-    mockDest1->clear();
+    using namespace QsLogging;
+    MockDestinationPtrU mockDest(new MockDestination(destinationName1));
+    Logger::instance().addDestination(std::move(mockDest));
 
     QLOG_DEBUG() << "foobar";
     QLOG_WARN() << "eiszeit";
     QLOG_FATAL() << "ruh-roh!";
-    using namespace QsLogging;
-    QVERIFY(mockDest1->hasMessage("foobar", DebugLevel));
-    QVERIFY(mockDest1->hasMessage("eiszeit", WarnLevel));
-    QVERIFY(mockDest1->hasMessage("ruh-roh!", FatalLevel));
-    QCOMPARE(mockDest1->messageCount(), 3);
+
+    mockDest = unique_cast(Logger::instance().removeDestination(destinationName1));
+    QVERIFY(mockDest->hasMessage("foobar", DebugLevel));
+    QVERIFY(mockDest->hasMessage("eiszeit", WarnLevel));
+    QVERIFY(mockDest->hasMessage("ruh-roh!", FatalLevel));
+    QCOMPARE(mockDest->messageCount(), 3);
 }
 
 void TestLog::testLevelChanges()
 {
-    mockDest1->clear();
-    mockDest2->clear();
+    using namespace QsLogging;
+    MockDestinationPtrU mockDest1(new MockDestination(destinationName1));
+    MockDestinationPtrU mockDest2(new MockDestination(destinationName2));
+    Logger::instance().addDestination(std::move(mockDest1));
+    Logger::instance().addDestination(std::move(mockDest2));
 
     using namespace QsLogging;
     Logger::instance().setLoggingLevel(WarnLevel);
@@ -102,12 +116,23 @@ void TestLog::testLevelChanges()
     QLOG_TRACE() << "one";
     QLOG_DEBUG() << "two";
     QLOG_INFO() << "three";
+
+    mockDest1 = unique_cast(Logger::instance().removeDestination(destinationName1));
+    mockDest2 = unique_cast(Logger::instance().removeDestination(destinationName2));
+
     QCOMPARE(mockDest1->messageCount(), 0);
     QCOMPARE(mockDest2->messageCount(), 0);
+
+    Logger::instance().addDestination(std::move(mockDest1));
+    Logger::instance().addDestination(std::move(mockDest2));
 
     QLOG_WARN() << "warning";
     QLOG_ERROR() << "error";
     QLOG_FATAL() << "fatal";
+
+    mockDest1 = unique_cast(Logger::instance().removeDestination(destinationName1));
+    mockDest2 = unique_cast(Logger::instance().removeDestination(destinationName2));
+
     QCOMPARE(mockDest1->messageCountForLevel(WarnLevel), 1);
     QCOMPARE(mockDest1->messageCountForLevel(ErrorLevel), 1);
     QCOMPARE(mockDest1->messageCountForLevel(FatalLevel), 1);
@@ -120,7 +145,9 @@ void TestLog::testLevelChanges()
 
 void TestLog::testLevelParsing()
 {
-    mockDest1->clear();
+    using namespace QsLogging;
+    MockDestinationPtrU mockDest(new MockDestination(destinationName1));
+    Logger::instance().addDestination(std::move(mockDest));
 
     QLOG_TRACE() << "one";
     QLOG_DEBUG() << "two";
@@ -129,10 +156,12 @@ void TestLog::testLevelParsing()
     QLOG_ERROR() << "error";
     QLOG_FATAL() << "fatal";
 
+    mockDest = unique_cast(Logger::instance().removeDestination(destinationName1));
+
     using namespace QsLogging;
-    for(int i = 0;i < mockDest1->messageCount();++i) {
+    for(int i = 0;i < mockDest->messageCount();++i) {
         bool conversionOk = false;
-        const MockDestination::Message& m = mockDest1->messageAt(i);
+        const MockDestination::Message& m = mockDest->messageAt(i);
         QCOMPARE(Logger::levelFromLogMessage(m.text, &conversionOk), m.level);
         QCOMPARE(Logger::levelFromLogMessage(m.text), m.level);
         QCOMPARE(conversionOk, true);
@@ -142,28 +171,33 @@ void TestLog::testLevelParsing()
 void TestLog::testDestinationRemove()
 {
     using namespace QsLogging;
-    mockDest1->clear();
-    mockDest2->clear();
+    MockDestinationPtrU mockDest(new MockDestination(destinationName1));
+    MockDestinationPtrU toAddAndRemove(new MockDestination(destinationName2));
+    Logger::instance().addDestination(std::move(mockDest));
+    Logger::instance().addDestination(std::move(toAddAndRemove));
     Logger::instance().setLoggingLevel(DebugLevel);
-    QSharedPointer<MockDestination> toAddAndRemove(new MockDestination);
-    Logger::instance().addDestination(toAddAndRemove);
-
     QLOG_INFO() << "one for all";
-    QCOMPARE(mockDest1->messageCount(), 1);
-    QCOMPARE(mockDest2->messageCount(), 1);
+
+    mockDest = unique_cast(Logger::instance().removeDestination(destinationName1));
+    toAddAndRemove = unique_cast(Logger::instance().removeDestination(destinationName2));
+    QCOMPARE(mockDest->messageCount(), 1);
     QCOMPARE(toAddAndRemove->messageCount(), 1);
 
-    Logger::instance().removeDestination(toAddAndRemove);
+    Logger::instance().addDestination(std::move(mockDest));
     QLOG_INFO() << "one for (almost) all";
-    QCOMPARE(mockDest1->messageCount(), 2);
-    QCOMPARE(mockDest2->messageCount(), 2);
+
+    mockDest = unique_cast(Logger::instance().removeDestination(destinationName1));
+    QCOMPARE(mockDest->messageCount(), 2);
     QCOMPARE(toAddAndRemove->messageCount(), 1);
     QCOMPARE(toAddAndRemove->messageCountForLevel(InfoLevel), 1);
 
-    Logger::instance().addDestination(toAddAndRemove);
+    Logger::instance().addDestination(std::move(mockDest));
+    Logger::instance().addDestination(std::move(toAddAndRemove));
     QLOG_INFO() << "another one for all";
-    QCOMPARE(mockDest1->messageCount(), 3);
-    QCOMPARE(mockDest2->messageCount(), 3);
+
+    mockDest = unique_cast(Logger::instance().removeDestination(destinationName1));
+    toAddAndRemove = unique_cast(Logger::instance().removeDestination(destinationName2));
+    QCOMPARE(mockDest->messageCount(), 3);
     QCOMPARE(toAddAndRemove->messageCount(), 2);
     QCOMPARE(toAddAndRemove->messageCountForLevel(InfoLevel), 2);
 }
@@ -229,41 +263,41 @@ void TestLog::testDestinationType()
 {
     using namespace QsLogging;
 
-    DestinationPtr console = DestinationFactory::MakeDebugOutputDestination();
-    DestinationPtr file = DestinationFactory::MakeFileDestination("test.log",
-                           DisableLogRotation, MaxSizeBytes(5000), MaxOldLogCount(1));
-    DestinationPtr func = DestinationFactory::MakeFunctorDestination(&DummyLogFunction);
+    DestinationPtrU console = DestinationFactory::MakeDebugOutputDestination();
+    DestinationPtrU file = DestinationFactory::MakeFileDestination("test.log",
+                           LogRotationOption::DisableLogRotation, MaxSizeBytes(5000), MaxOldLogCount(1));
+    DestinationPtrU func = DestinationFactory::MakeFunctorDestination(&DummyLogFunction);
 
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
 
-    Logger::instance().addDestination(console);
+    Logger::instance().addDestination(std::move(console));
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), true);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
 
-    Logger::instance().addDestination(file);
+    Logger::instance().addDestination(std::move(file));
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), true);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), true);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);
 
-    Logger::instance().addDestination(func);
+    Logger::instance().addDestination(std::move(func));
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), true);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), true);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), true);
 
-    Logger::instance().removeDestination(console);
+    Logger::instance().removeDestination(DebugOutputDestination::Type);
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), true);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), true);
 
-    Logger::instance().removeDestination(file);
+    Logger::instance().removeDestination(FileDestination::Type);
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), true);
 
-    Logger::instance().removeDestination(func);
+    Logger::instance().removeDestination(FunctorDestination::Type);
     QCOMPARE(Logger::instance().hasDestinationOfType(DebugOutputDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FileDestination::Type), false);
     QCOMPARE(Logger::instance().hasDestinationOfType(FunctorDestination::Type), false);

@@ -23,11 +23,11 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSLOGDESTMODEL_H
-#define QSLOGDESTMODEL_H
+#ifndef QSLOGWINDOWMODEL_H
+#define QSLOGWINDOWMODEL_H
 
-#include "QsLogDest.h"
-
+#include "QsLogSharedLibrary.h"
+#include "QsLogMessage.h"
 #include <QAbstractTableModel>
 #include <QReadWriteLock>
 
@@ -36,13 +36,10 @@
 
 namespace QsLogging
 {
-
-class QSLOG_SHARED_OBJECT ModelDestination : public QAbstractTableModel, public Destination
+class QSLOG_SHARED_OBJECT LogWindowModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    static const char* const Type;
-
     enum Column
     {
         TimeColumn = 0,
@@ -51,23 +48,18 @@ public:
         FormattedMessageColumn = 100
     };
 
-    explicit ModelDestination(size_t max_items = std::numeric_limits<size_t>::max());
-    virtual ~ModelDestination();
+    explicit LogWindowModel(size_t max_items = std::numeric_limits<size_t>::max());
+    virtual ~LogWindowModel() noexcept;
 
     void addEntry(const LogMessage& message);
     void clear();
-    LogMessage at(size_t index);
-
-    // Destination overrides
-    virtual void write(const LogMessage& message);
-    virtual bool isValid();
-    virtual QString type() const;
+    LogMessage at(size_t index) const;
 
     // QAbstractTableModel overrides
-    virtual int columnCount(const QModelIndex& parent = QModelIndex()) const;
-    virtual int rowCount(const QModelIndex& parent = QModelIndex()) const;
-    virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
-    virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
 private:
     std::deque<LogMessage> mLogMessages;
@@ -77,4 +69,4 @@ private:
 
 }
 
-#endif // QSLOGDESTMODEL_H
+#endif // QSLOGWINDOWMODEL_H

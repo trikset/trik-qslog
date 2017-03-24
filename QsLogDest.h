@@ -32,6 +32,7 @@
 #include <QtGlobal>
 #include <limits>
 #include <memory>
+#include <functional>
 class QString;
 class QObject;
 
@@ -41,7 +42,7 @@ namespace QsLogging
 class QSLOG_SHARED_OBJECT Destination
 {
 public:
-    using LogFunction = void (*)(const LogMessage& message);
+    using LogFunction = std::function<void(const LogMessage& message)>;
 
 public:
     virtual ~Destination() noexcept;

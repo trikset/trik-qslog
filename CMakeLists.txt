@@ -35,6 +35,7 @@ set(HEADER_FILES
 	QsLogDisableForThisFile.h
 	QsLogLevel.h
 	QsLogMessage.h
+	QsLogSharedLibrary.h
     )
 
 set(SOURCE_FILES

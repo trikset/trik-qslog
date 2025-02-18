@@ -186,6 +186,12 @@ Logger::~Logger()
     d = 0;
 }
 
+void Logger::removeDestination(DestinationPtr destination)
+{
+	Q_ASSERT(destination.data());
+	d->destList.removeAll(destination);
+}
+
 void Logger::addDestination(DestinationPtr destination)
 {
     Q_ASSERT(destination.data());
